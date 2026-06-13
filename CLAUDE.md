@@ -67,6 +67,21 @@ Tests are written **per vertical slice** as each user story is implemented — n
 - E2E: Playwright (`npm run test:e2e`)
 - Coverage target: 95% via `@vitest/coverage-v8` (`npm run test:coverage`)
 
+## Design System
+
+All UI work **must** use the xpense-design skill before implementing any component or page.
+
+```
+/xpense-design
+```
+
+Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hanken Grotesk body / JetBrains Mono numerals, Lucide icons, sentence-case copy, no emoji.
+
+- Tokens, components, and UI kit live in `.claude/skills/xpense-design/`
+- Link `.claude/skills/xpense-design/styles.css` for all tokens + fonts
+- Use existing primitives (Button, Input, Card, Badge, CategoryTag, TransactionRow, Stat…) — do not invent new ones
+- Expenses in ink (`--color-ink`), over-budget in red, amounts in JetBrains Mono
+
 ## Local Setup
 
 Fill in `.env.local` per the instructions at the top of that file, then:
