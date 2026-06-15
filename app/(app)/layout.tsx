@@ -55,6 +55,7 @@ export default async function AppLayout({
             <Link href="/dashboard" style={navLinkStyle}>Dashboard</Link>
             <Link href="/expenses" style={navLinkStyle}>Expenses</Link>
             <Link href="/categories" style={navLinkStyle}>Categories</Link>
+            <Link href="/recurring" style={navLinkStyle}>Recurring</Link>
             <Link href="/summary" style={navLinkStyle}>Summary</Link>
             <Link href="/settings" style={navLinkStyle}>Settings</Link>
           </nav>
