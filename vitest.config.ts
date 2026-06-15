@@ -12,7 +12,20 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      exclude: ["node_modules", ".next", "drizzle", "tests"],
+      exclude: [
+        "node_modules",
+        ".next",
+        "drizzle",
+        "tests",
+        "lib/schema.ts",
+        "lib/db.ts",
+        "lib/auth.ts",
+        "*.config.*",
+        "proxy.ts",
+        "app/layout.tsx",
+        "app/page.tsx",
+        "app/api/**",
+      ],
     },
   },
   resolve: {

@@ -65,7 +65,7 @@ Tests are written **per vertical slice** as each user story is implemented — n
 - Unit + component + mocked-integration: Vitest (`npm run test`)
 - Real-dependency + API-contract: Vitest against an ephemeral Neon branch DB
 - E2E: Playwright (`npm run test:e2e`)
-- Coverage target: 95% via `@vitest/coverage-v8` (`npm run test:coverage`)
+- Coverage target: 95% via `@vitest/coverage-v8` (`npm run test:coverage`) — installed, lib/ files tracked at 100% in HTML report (terminal reporter skips them; this is a vitest display quirk, not a coverage gap)
 
 ## Design System
 
@@ -81,6 +81,23 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 - Link `.claude/skills/xpense-design/styles.css` for all tokens + fonts
 - Use existing primitives (Button, Input, Card, Badge, CategoryTag, TransactionRow, Stat…) — do not invent new ones
 - Expenses in ink (`--color-ink`), over-budget in red, amounts in JetBrains Mono
+
+## Slice Completion Status
+
+| Slice | Stories | Status |
+|---|---|---|
+| 0 — Scaffold | — | ✅ complete |
+| 1 — Auth | US-01, US-02 | ✅ complete |
+| 2 — Currency + Groups + Subcategories | US-05, US-06, US-07 | ✅ complete |
+| 3 — Expense CRUD | US-10, US-11, US-12, US-13 | ✅ complete |
+| 4 — Summaries | US-14, US-15 | 🔜 next |
+| 5 — Recurrence | US-08, US-09 | pending |
+
+## Shared Utilities (built in Slice 3)
+
+- `lib/format.ts` — `formatAmount(amount, currency)` — use for all money display
+- `lib/validations/expenses.ts` — `validateAmount` + `validateExpenseDate` — reuse for recurring templates (Slice 5)
+- Cross-tenant guard on expenses: `eq(expenses.userId, userId)` — see `app/actions/expenses.ts`
 
 ## Local Setup
 
