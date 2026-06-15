@@ -137,5 +137,6 @@ export const recurringTemplates = pgTable("recurring_template", {
   dayOfMonth: integer("day_of_month").notNull(),
   active: boolean("active").notNull().default(true),
   lastRenewedAt: date("last_renewed_at", { mode: "string" }),
+  lastGeneratedDate: date("last_generated_date", { mode: "string" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
