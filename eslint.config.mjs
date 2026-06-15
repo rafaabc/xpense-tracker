@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored design system plugin — not our code
+    ".claude/**",
+    // Generated coverage reports
+    "coverage/**",
   ]),
 ]);
 
