@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import CurrencySelector from '@/components/CurrencySelector'
+import { updateCurrency } from '@/app/actions/currency'
 
 // TC-05-01: DKK and BRL options are shown
 // TC-05-02: Only DKK and BRL are offered
 // TC-05-03: Default currency for new account is DKK (selector defaults to DKK)
 // TC-05-04: Selecting currency updates UI (selector triggers action)
+// TC-05-05: Currency update reflected immediately without page reload
 
 vi.mock('@/app/actions/currency', () => ({
   updateCurrency: vi.fn().mockResolvedValue(undefined),
@@ -43,5 +46,16 @@ describe('CurrencySelector', () => {
   it('renders the display-only disclaimer text', () => {
     render(<CurrencySelector current="DKK" />)
     expect(screen.getByText(/stored values are never converted/i)).toBeInTheDocument()
+  })
+
+  it('TC-05-05: selecting a currency calls updateCurrency immediately (no page reload)', async () => {
+    const user = userEvent.setup()
+    render(<CurrencySelector current="DKK" />)
+
+    // Select BRL — triggers onChange → startTransition(() => updateCurrency('BRL'))
+    await user.selectOptions(screen.getByRole('combobox'), 'BRL')
+
+    // Action called immediately without hard navigation
+    expect(vi.mocked(updateCurrency)).toHaveBeenCalledWith('BRL')
   })
 })

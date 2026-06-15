@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // TC-08-03/04/10/11: recurrence generation with mocked DB
+// TC-09-11: Pending renewal (lastRenewedAt null) does NOT block expense generation
+// TC-09-12: Unacted renewal — template keeps generating at original amount
 // Pyramid mocked-integration #27
 
 // ─── Mock setup ─────────────────────────────────────────────────────────────
@@ -35,15 +37,18 @@ vi.mock('@/lib/schema', () => ({
   },
 }))
 
-// Helper: build a chainable query mock that resolves to `value`
+// Helper: build a chainable query mock that resolves to `value`.
+// Returns an explicitly-typed object so .mock.calls is accessible without casting.
 function chainable(value: unknown) {
-  const obj: Record<string, unknown> = {}
-  const chain = () => obj
-  obj.from = vi.fn(chain)
-  obj.where = vi.fn().mockResolvedValue(value)
-  obj.values = vi.fn(chain)
-  obj.returning = vi.fn().mockResolvedValue(value)
-  obj.set = vi.fn(chain)
+  const where = vi.fn().mockResolvedValue(value)
+  const returning = vi.fn().mockResolvedValue(value)
+  const values = vi.fn()
+  const set = vi.fn()
+  const from = vi.fn()
+  const obj = { from, where, values, returning, set }
+  from.mockReturnValue(obj)
+  values.mockReturnValue(obj)
+  set.mockReturnValue(obj)
   return obj
 }
 
@@ -188,5 +193,68 @@ describe('runCatchUp', () => {
     expect(dates).not.toContain('2024-01-15')
     expect(dates).not.toContain('2024-02-15')
     expect(dates).toContain('2024-03-15')
+  })
+
+  it('TC-09-11: pending renewal (lastRenewedAt null) does NOT block generation', async () => {
+    // Template has unconfirmed renewal — lastRenewedAt is null — but generation still runs
+    const templates = [
+      {
+        id: 'tmpl-renewal',
+        userId: 'user-1',
+        subcategoryId: 'sub-1',
+        amount: '500.00',
+        startDate: '2024-01-15',
+        interval: 'monthly' as const,
+        dayOfMonth: 15,
+        active: true,
+        lastRenewedAt: null, // renewal pending, user has not confirmed yet
+        lastGeneratedDate: '2024-01-15', // one month already generated
+      },
+    ]
+
+    const selectChain = chainable(templates)
+    mockSelect.mockReturnValue(selectChain)
+    const insertChain = chainable([])
+    mockInsert.mockReturnValue(insertChain)
+    const updateChain = { set: vi.fn().mockReturnThis(), where: vi.fn().mockResolvedValue([]) }
+    mockUpdate.mockReturnValue(updateChain)
+
+    const { runCatchUp } = await import('@/lib/recurrence-engine')
+    await runCatchUp('user-1', '2024-02-15')
+
+    // Generation proceeds — insert was called for the due occurrence
+    expect(mockInsert).toHaveBeenCalledOnce()
+  })
+
+  it('TC-09-12: unacted renewal template keeps generating at original amount', async () => {
+    // User has not confirmed/updated the renewal — amount stays at original
+    const templates = [
+      {
+        id: 'tmpl-renewal',
+        userId: 'user-1',
+        subcategoryId: 'sub-1',
+        amount: '800.00', // original price
+        startDate: '2024-01-15',
+        interval: 'monthly' as const,
+        dayOfMonth: 15,
+        active: true,
+        lastRenewedAt: null,
+        lastGeneratedDate: '2024-01-15',
+      },
+    ]
+
+    const selectChain = chainable(templates)
+    mockSelect.mockReturnValue(selectChain)
+    const insertChain = chainable([])
+    mockInsert.mockReturnValue(insertChain)
+    const updateChain = { set: vi.fn().mockReturnThis(), where: vi.fn().mockResolvedValue([]) }
+    mockUpdate.mockReturnValue(updateChain)
+
+    const { runCatchUp } = await import('@/lib/recurrence-engine')
+    await runCatchUp('user-1', '2024-02-15')
+
+    // Generated expense preserves original amount
+    const insertValues = insertChain.values.mock.calls[0][0] as Array<{ amount: string }>
+    expect(insertValues[0].amount).toBe('800.00')
   })
 })

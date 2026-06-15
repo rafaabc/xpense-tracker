@@ -7,6 +7,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // TC-13-08/09: deleteExpense rejects cross-tenant
 // TC-11-01: listExpenses scoped to session user id
 // TC-11-06: listExpenses default order is date descending
+// TC-11-07: from/to date filter passed to where clause
+// TC-11-08/09: group and subcategory filters passed to where clause
+// TC-11-10: combined filters (from + to + group + subcategory) all applied together
 
 // --- mock db ---
 const mockInsert = vi.fn()
@@ -214,6 +217,26 @@ describe('listExpenses', () => {
 
     const whereArg = selectChain.where.mock.calls[0][0]
     const serialized = JSON.stringify(whereArg)
+    expect(serialized).toContain('grp-1')
+    expect(serialized).toContain('sub-1')
+  })
+
+  it('TC-11-10: all four filters applied together compose the where clause', async () => {
+    const selectChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockResolvedValue([]),
+    }
+    mockSelect.mockReturnValue(selectChain)
+
+    const { listExpenses } = await import('@/app/actions/expenses')
+    await listExpenses({ from: '2026-01-01', to: '2026-06-30', group: 'grp-1', subcategory: 'sub-1' })
+
+    const whereArg = selectChain.where.mock.calls[0][0]
+    const serialized = JSON.stringify(whereArg)
+    expect(serialized).toContain('2026-01-01')
+    expect(serialized).toContain('2026-06-30')
     expect(serialized).toContain('grp-1')
     expect(serialized).toContain('sub-1')
   })

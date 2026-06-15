@@ -24,7 +24,7 @@ export default defineConfig({
         "proxy.ts",
         "app/layout.tsx",
         "app/page.tsx",
-        "app/api/**",
+        "app/api/auth/**",
       ],
     },
   },
