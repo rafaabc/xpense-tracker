@@ -109,10 +109,18 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 
 - `lib/recurrence.ts` — pure date/interval logic: `clampDayOfMonth`, `addInterval`, `occurrencesDue`, `nextExecutionDate`, `renewalDueDate`, `isRenewalDue`, `buildSuccessor`, `INTERVALS`
 - `lib/validations/recurring.ts` — `validateDayOfMonth`, `validateInterval`, `validateStartDate`
-- `lib/recurrence-engine.ts` — session-agnostic: `runCatchUp(userId, today)`, `runCatchUpAllUsers(today)` — shared by dashboard lazy catch-up + daily Vercel Cron
+- `lib/recurrence-engine.ts` — session-agnostic: `runCatchUp(userId, today)`, `runCatchUpAllUsers(today)` — shared by dashboard lazy catch-up + daily Vercel Cron; **never call `revalidatePath` inside this module** — it is called during RSC render; call `revalidatePath` in the caller (cron route handler) only
 - `app/actions/recurring.ts` — CRUD + `confirmRenewal`, `updateRenewal`, `getDueRenewals`
 - Cron bearer guard: `CRON_SECRET` env var must be set in `.env.local`; Vercel injects it automatically in production
 - Idempotency: `lastGeneratedDate` column on `recurringTemplates` — generation emits only dates strictly after this marker
+
+## E2E Test Infrastructure
+
+`playwright.config.ts` loads `.env.local` via `dotenv` and sets `NODE_OPTIONS=--use-system-ca`.
+
+- **dotenv**: Playwright process doesn't inherit Next.js's env loading — must explicitly call `config({ path: '.env.local' })` in `playwright.config.ts`
+- **`--use-system-ca`**: Node.js 24 ships a CA bundle that doesn't include Neon's root CA; without this flag, `neon()` HTTP calls from the test process fail with `"unable to verify the first certificate"`
+- E2E fixtures (`tests/e2e/fixtures/auth.ts`) connect to Neon directly (not via the app server) to seed/teardown test sessions
 
 ## Local Setup
 

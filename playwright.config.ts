@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
+// Node.js 24 doesn't bundle the CA that Neon uses; use the system cert store instead
+process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ""} --use-system-ca`.trim();
 
 export default defineConfig({
   testDir: "./tests/e2e",

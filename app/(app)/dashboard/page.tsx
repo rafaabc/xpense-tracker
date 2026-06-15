@@ -1,8 +1,8 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { users } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
+import { users, groups } from '@/lib/schema'
+import { eq, count } from 'drizzle-orm'
 import { runCatchUp } from '@/lib/recurrence-engine'
 import { getDueRenewals } from '@/app/actions/recurring'
 import RenewalBanner from '@/components/RenewalBanner'
@@ -18,10 +18,13 @@ export default async function DashboardPage() {
   // Lazy catch-up: generate any overdue recurring expenses for this user (TC-08-03)
   await runCatchUp(userId, today)
 
-  const [dueRenewals, [userRecord]] = await Promise.all([
+  const [dueRenewals, [userRecord], [groupCount]] = await Promise.all([
     getDueRenewals(),
     db.select({ currency: users.currency }).from(users).where(eq(users.id, userId)),
+    db.select({ count: count() }).from(groups).where(eq(groups.userId, userId)),
   ])
+
+  const hasGroups = (groupCount?.count ?? 0) > 0
 
   const currency = (userRecord?.currency ?? 'DKK') as Currency
 
@@ -59,6 +62,19 @@ export default async function DashboardPage() {
             <RenewalBanner key={tmpl.id} template={tmpl} currency={currency} />
           ))}
         </div>
+      )}
+
+      {!hasGroups && (
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 'var(--text-md)',
+            color: 'var(--ink-400)',
+            margin: 0,
+          }}
+        >
+          Add groups and subcategories to get started.
+        </p>
       )}
     </div>
   )

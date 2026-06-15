@@ -4,7 +4,6 @@
 import { db } from '@/lib/db'
 import { expenses, recurringTemplates } from '@/lib/schema'
 import { eq, and } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
 import { occurrencesDue } from '@/lib/recurrence'
 import type { RecurringTemplate } from '@/lib/recurrence'
 
@@ -57,7 +56,4 @@ async function _processTemplates(templates: TemplateRow[], today: string): Promi
       .set({ lastGeneratedDate: lastDate })
       .where(eq(recurringTemplates.id, tmpl.id))
   }
-
-  revalidatePath('/expenses')
-  revalidatePath('/dashboard')
 }
