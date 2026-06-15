@@ -92,6 +92,7 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 | 3 — Expense CRUD | US-10, US-11, US-12, US-13 | ✅ complete |
 | 4 — Summaries | US-14, US-15 | ✅ complete |
 | 5 — Recurrence | US-08, US-09 | ✅ complete |
+| 6 — Test Coverage | — | ✅ complete — closed 22 TC-ID gaps; added E2E fixtures + create/monthly tests, cron + engine + expenses mocked-integration, currency/recurring/summaries unit tests (PR #6) |
 
 ## Shared Utilities (built in Slice 3)
 
