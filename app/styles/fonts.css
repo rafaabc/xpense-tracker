@@ -1,0 +1,12 @@
+/* ============================================================
+   Xpense — Webfonts
+   Display:  Space Grotesk  (geometric, confident headings)
+   UI/Body:  Hanken Grotesk (warm, highly readable)
+   Numerals: JetBrains Mono (tabular figures for money)
+   ------------------------------------------------------------
+   NOTE: These @font-face rules pull woff2 binaries from Google's
+   CDN. For production we recommend self-hosting the files and
+   updating the src URLs. See readme.md > VISUAL FOUNDATIONS.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');

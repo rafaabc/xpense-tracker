@@ -1,0 +1,101 @@
+/* ============================================================
+   Xpense — Color tokens
+   Base palettes first, then semantic aliases.
+   Reference semantic tokens in product code, not raw scales.
+   ============================================================ */
+
+:root {
+  /* ---- Brand: Emerald (money, growth, trust) ---- */
+  --emerald-50:  #E9F6EF;
+  --emerald-100: #CDEBDC;
+  --emerald-200: #9ED9BC;
+  --emerald-300: #65C297;
+  --emerald-400: #2FA876;
+  --emerald-500: #128A5E;  /* primary brand */
+  --emerald-600: #0C6E4B;
+  --emerald-700: #09573C;
+  --emerald-800: #07402D;
+  --emerald-900: #052E20;
+
+  /* ---- Warm neutrals (paper + ink) ---- */
+  --paper:     #F7F5F0;  /* app background */
+  --paper-dim: #F0EDE5;  /* recessed background */
+  --white:     #FFFFFF;  /* card surface */
+
+  --ink-900: #14201B;  /* strongest text, green-tinted near-black */
+  --ink-700: #2C3A33;
+  --ink-500: #5A6B62;  /* muted text */
+  --ink-400: #7C8C83;
+  --ink-300: #9DAAA2;  /* subtle text, placeholders */
+  --ink-200: #C3CCC6;  /* disabled */
+
+  --line-strong: #DAD6CC;
+  --line:        #E6E2D8;  /* default borders */
+  --line-soft:   #EFEBE2;  /* hairlines on paper */
+
+  /* ---- Accent: Amber (highlights, premium, streaks) ---- */
+  --amber-50:  #FDF4E3;
+  --amber-100: #FAE6BF;
+  --amber-400: #EFB13C;
+  --amber-500: #E29A14;
+  --amber-600: #B9790A;
+
+  /* ---- Semantic status ---- */
+  --positive-50:  #E6F6EE;
+  --positive-500: #15A66B;  /* income / on-track */
+  --positive-700: #0B7A4C;
+
+  --negative-50:  #FCEBEA;
+  --negative-500: #E0494E;  /* expense / over-budget */
+  --negative-700: #B5292E;
+
+  --warning-50:   #FDF4E3;
+  --warning-500:  #E29A14;
+  --warning-700:  #9E6606;
+
+  --info-50:      #E8F1FB;
+  --info-500:     #2F7FD1;  /* neutral informational */
+  --info-700:     #1C5797;
+
+  /* ---- Category palette (expense buckets) ---- */
+  --cat-dining:        #F2784B;
+  --cat-groceries:     #5AA65E;
+  --cat-transport:     #4A8FE7;
+  --cat-shopping:      #9B6DD6;
+  --cat-bills:         #E0A33D;
+  --cat-health:        #20B6A8;
+  --cat-entertainment: #E86AA6;
+  --cat-other:         #7E8E85;
+
+  /* ============================================================
+     Semantic aliases — use these in product code
+     ============================================================ */
+  --brand:            var(--emerald-500);
+  --brand-strong:     var(--emerald-600);
+  --brand-soft:       var(--emerald-50);
+  --brand-contrast:   var(--white);
+
+  --bg-app:           var(--paper);
+  --bg-recessed:      var(--paper-dim);
+  --surface-card:     var(--white);
+  --surface-raised:   var(--white);
+  --surface-overlay:  var(--white);
+
+  --text-strong:      var(--ink-900);
+  --text-body:        var(--ink-700);
+  --text-muted:       var(--ink-500);
+  --text-subtle:      var(--ink-300);
+  --text-on-brand:    var(--white);
+  --text-disabled:    var(--ink-200);
+
+  --border-default:   var(--line);
+  --border-strong:    var(--line-strong);
+  --border-soft:      var(--line-soft);
+  --border-focus:     var(--emerald-400);
+
+  --money-in:         var(--positive-500);
+  --money-out:        var(--ink-900);   /* expenses render in ink, not alarming red */
+  --money-over:       var(--negative-500);
+
+  --focus-ring:       color-mix(in oklch, var(--emerald-400) 45%, transparent);
+}
