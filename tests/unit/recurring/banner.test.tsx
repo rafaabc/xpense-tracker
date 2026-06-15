@@ -60,4 +60,19 @@ describe('RenewalBanner', () => {
     // Banner should no longer be in the document
     expect(screen.queryByText(/annual review/i)).not.toBeInTheDocument()
   })
+
+  it('TC-09-10: re-mounting banner (new login) re-shows it after prior dismiss', () => {
+    const { unmount } = render(<RenewalBanner template={template} currency="DKK" />)
+
+    // Dismiss the banner
+    fireEvent.click(screen.getByRole('button', { name: /dismiss/i }))
+    expect(screen.queryByText(/annual review/i)).not.toBeInTheDocument()
+
+    // Simulate navigation away (unmount) and back (new login / page load = remount)
+    unmount()
+    render(<RenewalBanner template={template} currency="DKK" />)
+
+    // Local dismissed state resets on remount — banner visible again
+    expect(screen.getByText(/annual review/i)).toBeInTheDocument()
+  })
 })
