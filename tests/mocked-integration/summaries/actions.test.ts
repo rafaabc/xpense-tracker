@@ -5,7 +5,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // TC-15-02: getAvailableYears returns distinct years with ≥1 expense
 
 const mockSelect = vi.fn()
-const mockSelectDistinct = vi.fn()
 
 const makeChainable = (resolvedValue: unknown) => ({
   from: vi.fn().mockReturnThis(),
@@ -17,7 +16,6 @@ const makeChainable = (resolvedValue: unknown) => ({
 vi.mock('@/lib/db', () => ({
   db: {
     select: mockSelect,
-    selectDistinct: mockSelectDistinct,
   },
 }))
 
@@ -85,14 +83,16 @@ describe('getAvailableYears', () => {
     const chain = {
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
+      groupBy: vi.fn().mockReturnThis(),
       orderBy: vi.fn().mockResolvedValue(fakeYears),
     }
-    mockSelectDistinct.mockReturnValue(chain)
+    mockSelect.mockReturnValue(chain)
 
     const { getAvailableYears } = await import('@/app/actions/summaries')
     const result = await getAvailableYears()
 
-    expect(mockSelectDistinct).toHaveBeenCalledOnce()
+    expect(mockSelect).toHaveBeenCalled()
+    expect(chain.groupBy).toHaveBeenCalledOnce()
     expect(result).toEqual([2026, 2025])
   })
 })

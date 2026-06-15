@@ -61,13 +61,13 @@ export async function getAnnualRows(year: number): Promise<AnnualRow[]> {
 export async function getAvailableYears(): Promise<number[]> {
   const userId = await requireSession()
 
+  const yearExpr = sql<number>`extract(year from ${expenses.date}::date)::int`
   const rows = await db
-    .selectDistinct({
-      year: sql<number>`extract(year from ${expenses.date}::date)::int`,
-    })
+    .select({ year: yearExpr })
     .from(expenses)
     .where(eq(expenses.userId, userId))
-    .orderBy(sql`extract(year from ${expenses.date}::date) desc`)
+    .groupBy(yearExpr)
+    .orderBy(sql`1 desc`)
 
   return rows.map((r) => r.year)
 }
