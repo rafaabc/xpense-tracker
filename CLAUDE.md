@@ -90,14 +90,20 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 | 1 — Auth | US-01, US-02 | ✅ complete |
 | 2 — Currency + Groups + Subcategories | US-05, US-06, US-07 | ✅ complete |
 | 3 — Expense CRUD | US-10, US-11, US-12, US-13 | ✅ complete |
-| 4 — Summaries | US-14, US-15 | 🔜 next |
-| 5 — Recurrence | US-08, US-09 | pending |
+| 4 — Summaries | US-14, US-15 | ✅ complete |
+| 5 — Recurrence | US-08, US-09 | 🔜 next |
 
 ## Shared Utilities (built in Slice 3)
 
 - `lib/format.ts` — `formatAmount(amount, currency)` — use for all money display
 - `lib/validations/expenses.ts` — `validateAmount` + `validateExpenseDate` — reuse for recurring templates (Slice 5)
 - Cross-tenant guard on expenses: `eq(expenses.userId, userId)` — see `app/actions/expenses.ts`
+
+## Shared Utilities (built in Slice 4)
+
+- `lib/summaries.ts` — pure calc functions: `calcMonthlyBreakdown`, `elapsedMonths`, `calcGroupAverages`, `buildMatrix`, `calcMonthTotals`
+- `app/actions/summaries.ts` — `getMonthlyRows`, `getAnnualRows`, `getAvailableYears`, `getUserCurrency`
+- Neon HTTP compat note: use `select` + `groupBy` for distinct queries — `selectDistinct` generates unqualified column refs
 
 ## Local Setup
 
