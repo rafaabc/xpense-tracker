@@ -140,6 +140,7 @@ export async function listRecurringTemplates(): Promise<RecurringTemplateRow[]> 
   const rows = await db
     .select({
       id: recurringTemplates.id,
+      userId: recurringTemplates.userId,
       amount: recurringTemplates.amount,
       subcategoryId: subcategories.id,
       subcategoryName: subcategories.name,
@@ -219,6 +220,7 @@ export async function getDueRenewals(): Promise<RecurringTemplateRow[]> {
   const rows = await db
     .select({
       id: recurringTemplates.id,
+      userId: recurringTemplates.userId,
       amount: recurringTemplates.amount,
       subcategoryId: subcategories.id,
       subcategoryName: subcategories.name,
