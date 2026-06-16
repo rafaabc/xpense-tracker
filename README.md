@@ -1,6 +1,10 @@
+[![CI](https://github.com/rafaabc/xpense-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaabc/xpense-tracker/actions/workflows/ci.yml)
+
 # xpense-tracker
 
-Personal expense tracking app. Groups and subcategories, recurring templates, monthly/annual summaries, multi-currency display.
+As a QA, I have created a personal expense tracking app to practice the testing and quality knowledge, assisted by AI. Groups and subcategories, recurring templates, monthly/annual summaries, multi-currency display are available features.
+
+**Live:** https://xpense-tracker-xi.vercel.app/
 
 ## Stack
 
@@ -35,7 +39,10 @@ npm run test:e2e        # Playwright E2E (requires dev server or starts one)
 npm run lint            # ESLint
 ```
 
-## Project docs
+---
 
-- `CLAUDE.md` — codebase guidance (architecture, stack, test strategy)
-- `docs/` (gitignored) — user stories, test conditions, implementation plans
+## Author
+
+**Rafael** — [LinkedIn](https://www.linkedin.com/in/rafael-albuquerque-qa/) · [GitHub](https://github.com/rafaabc)
+
+---
