@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same ref — no point running stale pushes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # vitest run --coverage is unconditionally single-pass (no watch mode).
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+  e2e:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    # Auth secrets available to all steps; DATABASE_URL is injected via .env.local
+    # after the Neon branch is created (see "Write .env.local" step).
+    env:
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
+      AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # --- Ephemeral Neon branch -------------------------------------------
+      # Each run gets a fresh copy-on-write clone of the parent branch.
+      # The clone inherits the schema, so no db:push is needed.
+      # Branch name is keyed on run_id + attempt to survive re-runs.
+      - name: Create Neon branch
+        id: neon
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          parent: ${{ secrets.NEON_PARENT_BRANCH }}
+          branch_name: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+      # Reconstruct .env.local so dotenv-cli (used by `npm run dev` and
+      # `npm run test:e2e`) can find it. DATABASE_URL comes from the fresh branch.
+      - name: Write .env.local
+        env:
+          NEON_DB_URL: ${{ steps.neon.outputs.db_url }}
+        run: |
+          cat > .env.local <<EOF
+          DATABASE_URL=${NEON_DB_URL}
+          AUTH_SECRET=${AUTH_SECRET}
+          AUTH_GOOGLE_ID=${AUTH_GOOGLE_ID}
+          AUTH_GOOGLE_SECRET=${AUTH_GOOGLE_SECRET}
+          CRON_SECRET=${CRON_SECRET}
+          EOF
+
+      # --- Playwright browser cache ----------------------------------------
+      # Cache keyed on package-lock.json so a Playwright version bump busts it.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browser
+        # OS deps are not cached; always install them. On a cache hit the
+        # browser binaries are already present so this is fast.
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts uses webServer.url to poll http://localhost:3000
+      # before tests start — no sleep step needed.
+      - run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
+      # --- Tear down the ephemeral branch ----------------------------------
+      # Runs even if tests fail so no ci-* branches are left in the Neon console.
+      - name: Delete Neon branch
+        if: always()
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          api_key: ${{ secrets.NEON_API_KEY }}

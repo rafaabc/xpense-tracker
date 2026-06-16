@@ -53,8 +53,9 @@ test.describe("Monthly summary — smoke (US-14)", () => {
       timeout: 10000,
     });
 
-    // The seeded amount (250) should appear somewhere on the page
-    await expect(page.getByText(/250/)).toBeVisible();
+    // The seeded amount (250) should appear somewhere on the page.
+    // .first() because 250 renders in both the total stat and breakdown row.
+    await expect(page.getByText(/250/).first()).toBeVisible();
 
     // The seeded group name should appear in the breakdown
     await expect(page.getByText("E2E Group")).toBeVisible();
