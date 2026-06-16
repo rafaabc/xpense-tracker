@@ -59,8 +59,11 @@ test.describe("Create expense — smoke (US-10)", () => {
     // Save
     await page.getByRole("button", { name: /^save$/i }).click();
 
-    // The expense row should appear in the list
-    await expect(page.getByText("E2E Group")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("E2E Subcategory")).toBeVisible();
+    // The expense row should appear in the list.
+    // Assert the formatted amount (unique to the row — never in filter dropdowns).
+    await expect(page.getByText(/150\.00/)).toBeVisible({ timeout: 10000 });
+    // Use exact match: subcategory filter options render as "E2E Group — E2E Subcategory",
+    // so substring match would be ambiguous.
+    await expect(page.getByText("E2E Subcategory", { exact: true })).toBeVisible();
   });
 });
