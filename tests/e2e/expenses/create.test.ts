@@ -47,8 +47,10 @@ test.describe("Create expense — smoke (US-10)", () => {
     // Fill in the amount
     await page.getByLabel(/amount/i).fill("150.00");
 
-    // Select the seeded subcategory
+    // Select the seeded subcategory — scope to dialog to avoid matching the
+    // filter dropdown (#filter-subcategory) also labelled "Subcategory".
     await page
+      .getByRole("dialog", { name: /add expense/i })
       .getByLabel(/subcategory/i)
       .selectOption({ label: "E2E Subcategory" });
 
