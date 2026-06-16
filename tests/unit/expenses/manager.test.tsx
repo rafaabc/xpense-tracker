@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ExpensesManager from '@/components/ExpensesManager'
+import ExpensesManager from '@/components/expenses/ExpensesManager'
 
 // TC-11-03: Row displays Group name
 // TC-11-04: Row displays Subcategory name

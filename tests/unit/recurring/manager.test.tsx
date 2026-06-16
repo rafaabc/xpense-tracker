@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import RecurringManager from '@/components/RecurringManager'
-import type { RecurringTemplateRow } from '@/app/actions/recurring'
+import RecurringManager from '@/components/recurring/RecurringManager'
+import type { RecurringTemplateRow } from '@/lib/types'
 
 // TC-08-05: List of active recurring templates is displayed
 // TC-08-06: Each row shows amount, subcategory, interval, next execution date

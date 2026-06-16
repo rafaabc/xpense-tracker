@@ -4,8 +4,8 @@ import { groups, subcategories, users } from '@/lib/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import { listExpenses } from '@/app/actions/expenses'
-import ExpensesManager from '@/components/ExpensesManager'
-import type { Currency } from '@/lib/validations/currency'
+import ExpensesManager from '@/components/expenses/ExpensesManager'
+import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
 interface SearchParams {
   from?: string
@@ -60,7 +60,7 @@ export default async function ExpensesPage({
     subcategories: subsByGroup.get(g.id) ?? [],
   }))
 
-  const currency = (userRecord?.currency ?? 'DKK') as Currency
+  const currency = (userRecord?.currency ?? DEFAULT_CURRENCY) as Currency
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 860 }}>

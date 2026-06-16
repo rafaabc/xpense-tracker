@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 import { expenses, subcategories, groups, users } from '@/lib/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { MonthlyRow, AnnualRow } from '@/lib/summaries'
-import type { Currency } from '@/lib/validations/currency'
+import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
 async function requireSession() {
   const session = await auth()
@@ -78,5 +78,5 @@ export async function getUserCurrency(): Promise<Currency> {
     .select({ currency: users.currency })
     .from(users)
     .where(eq(users.id, userId))
-  return (row?.currency ?? 'DKK') as Currency
+  return (row?.currency ?? DEFAULT_CURRENCY) as Currency
 }

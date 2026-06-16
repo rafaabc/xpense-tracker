@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
-import CurrencySelector from '@/components/CurrencySelector'
+import CurrencySelector from '@/components/currency/CurrencySelector'
 import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
 export default async function SettingsPage() {

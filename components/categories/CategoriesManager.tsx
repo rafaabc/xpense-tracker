@@ -8,7 +8,9 @@ import {
 import {
   createSubcategory, renameSubcategory, deleteSubcategory,
 } from '@/app/actions/subcategories'
-import DeleteConfirmModal from '@/components/DeleteConfirmModal'
+import { validateGroupName } from '@/lib/validations/groups'
+import { validateSubcategoryName } from '@/lib/validations/subcategories'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 
 interface SubcategoryRow { id: string; name: string }
 interface GroupRow { id: string; name: string; subcategories: SubcategoryRow[] }
@@ -45,7 +47,8 @@ export default function CategoriesManager({ groups }: Props) {
   function refresh() { router.refresh() }
 
   async function handleCreateGroup() {
-    if (!newGroupName.trim()) return
+    const check = validateGroupName(newGroupName)
+    if (!check.ok) { setError(check.error); return }
     setError(null)
     try {
       await createGroup(newGroupName)
@@ -58,7 +61,8 @@ export default function CategoriesManager({ groups }: Props) {
   }
 
   async function handleRenameGroup(id: string) {
-    if (!renameGroupValue.trim()) return
+    const check = validateGroupName(renameGroupValue)
+    if (!check.ok) { setError(check.error); return }
     setError(null)
     try {
       await renameGroup(id, renameGroupValue)
@@ -85,7 +89,8 @@ export default function CategoriesManager({ groups }: Props) {
   }
 
   async function handleCreateSubcategory(groupId: string) {
-    if (!newSubName.trim()) return
+    const check = validateSubcategoryName(newSubName)
+    if (!check.ok) { setError(check.error); return }
     setError(null)
     try {
       await createSubcategory(newSubName, groupId)
@@ -98,7 +103,8 @@ export default function CategoriesManager({ groups }: Props) {
   }
 
   async function handleRenameSubcategory(id: string) {
-    if (!renameSubValue.trim()) return
+    const check = validateSubcategoryName(renameSubValue)
+    if (!check.ok) { setError(check.error); return }
     setError(null)
     try {
       await renameSubcategory(id, renameSubValue)

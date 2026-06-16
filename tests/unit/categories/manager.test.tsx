@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import CategoriesManager from '@/components/CategoriesManager'
+import CategoriesManager from '@/components/categories/CategoriesManager'
 
 // TC-06-05: Delete confirmation modal shown for group
 // TC-06-06: Modal warns about cascade when group has subcategories

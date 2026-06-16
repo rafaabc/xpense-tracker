@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import CurrencySelector from '@/components/CurrencySelector'
+import CurrencySelector from '@/components/currency/CurrencySelector'
 import { updateCurrency } from '@/app/actions/currency'
 
 // TC-05-01: DKK and BRL options are shown

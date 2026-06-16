@@ -85,6 +85,19 @@ export function buildMatrix(rows: AnnualRow[], year: number): Matrix {
   return matrix
 }
 
+export function calcGroupTotals(rows: AnnualRow[]): {
+  groupTotals: Record<string, number>
+  groupNames: Record<string, string>
+} {
+  const groupTotals: Record<string, number> = {}
+  const groupNames: Record<string, string> = {}
+  for (const row of rows) {
+    groupTotals[row.groupId] = (groupTotals[row.groupId] ?? 0) + parseFloat(row.amount)
+    groupNames[row.groupId] = row.groupName
+  }
+  return { groupTotals, groupNames }
+}
+
 export function calcMonthTotals(matrix: Matrix): Record<number, number> {
   const totals: Record<number, number> = {}
   for (let m = 1; m <= 12; m++) totals[m] = 0

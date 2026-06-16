@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import DeleteConfirmModal from '@/components/DeleteConfirmModal'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 
 // TC-06-05: Delete confirmation modal renders
 // TC-06-06: Modal shows cascade warning when group has subcategories

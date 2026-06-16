@@ -6,6 +6,8 @@ import { expenses, subcategories, groups } from '@/lib/schema'
 import { eq, and, gte, lte, desc } from 'drizzle-orm'
 import { validateAmount, validateExpenseDate } from '@/lib/validations/expenses'
 import { revalidatePath } from 'next/cache'
+import type { ExpenseRow } from '@/lib/types'
+export type { ExpenseRow }
 
 async function requireSession() {
   const session = await auth()
@@ -89,16 +91,6 @@ export interface ExpenseFilters {
   to?: string
   group?: string
   subcategory?: string
-}
-
-export interface ExpenseRow {
-  id: string
-  amount: string
-  date: string
-  subcategoryId: string
-  subcategoryName: string
-  groupId: string
-  groupName: string
 }
 
 export async function listExpenses(filters: ExpenseFilters): Promise<ExpenseRow[]> {

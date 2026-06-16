@@ -7,12 +7,12 @@ import {
   updateRecurringTemplate,
   deleteRecurringTemplate,
 } from '@/app/actions/recurring'
-import type { RecurringTemplateRow } from '@/app/actions/recurring'
+import type { RecurringTemplateRow } from '@/lib/types'
 import { formatAmount } from '@/lib/format'
 import { INTERVALS } from '@/lib/recurrence'
 import type { Currency } from '@/lib/validations/currency'
-import RecurringForm from '@/components/RecurringForm'
-import DeleteConfirmModal from '@/components/DeleteConfirmModal'
+import RecurringForm from '@/components/recurring/RecurringForm'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }

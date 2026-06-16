@@ -5,8 +5,8 @@ import { users, groups } from '@/lib/schema'
 import { eq, count } from 'drizzle-orm'
 import { runCatchUp } from '@/lib/recurrence-engine'
 import { getDueRenewals } from '@/app/actions/recurring'
-import RenewalBanner from '@/components/RenewalBanner'
-import type { Currency } from '@/lib/validations/currency'
+import RenewalBanner from '@/components/recurring/RenewalBanner'
+import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
   const hasGroups = (groupCount?.count ?? 0) > 0
 
-  const currency = (userRecord?.currency ?? 'DKK') as Currency
+  const currency = (userRecord?.currency ?? DEFAULT_CURRENCY) as Currency
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>

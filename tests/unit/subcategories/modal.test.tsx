@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import DeleteConfirmModal from '@/components/DeleteConfirmModal'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 
 // TC-07-06: Delete confirmation modal renders for subcategory
 // TC-07-07: Modal warns about expense deletion when subcategory has expenses

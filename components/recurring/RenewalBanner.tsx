@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { confirmRenewal, updateRenewal } from '@/app/actions/recurring'
-import type { RecurringTemplateRow } from '@/app/actions/recurring'
+import type { RecurringTemplateRow } from '@/lib/types'
 import { validateAmount } from '@/lib/validations/expenses'
 import { formatAmount } from '@/lib/format'
 import { INTERVALS } from '@/lib/recurrence'
