@@ -9,6 +9,7 @@ import { validateDayOfMonth, validateInterval, validateStartDate } from '@/lib/v
 import { nextExecutionDate, renewalDueDate, isRenewalDue, buildSuccessor } from '@/lib/recurrence'
 import type { Interval, RecurringTemplate } from '@/lib/recurrence'
 import { revalidatePath } from 'next/cache'
+import type { RecurringTemplateRow } from '@/lib/types'
 
 async function requireSession() {
   const session = await auth()
@@ -42,22 +43,6 @@ export interface RecurringPayload {
   startDate: string
   interval: string
   dayOfMonth: string
-}
-
-export interface RecurringTemplateRow {
-  id: string
-  amount: string
-  subcategoryId: string
-  subcategoryName: string
-  groupId: string
-  groupName: string
-  startDate: string
-  interval: Interval
-  dayOfMonth: number
-  active: boolean
-  lastRenewedAt: string | null
-  lastGeneratedDate: string | null
-  nextExecutionDate: string
 }
 
 // ─── CRUD ────────────────────────────────────────────────────────────────────

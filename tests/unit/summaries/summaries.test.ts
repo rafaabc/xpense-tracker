@@ -5,6 +5,7 @@ import {
   calcGroupAverages,
   buildMatrix,
   calcMonthTotals,
+  calcGroupTotals,
 } from '@/lib/summaries'
 
 // TC-14-04/05/06/07/08 and TC-15-04/05/06/07/09/10
@@ -161,5 +162,35 @@ describe('calcMonthTotals', () => {
     for (let m = 1; m <= 12; m++) {
       expect(totals[m]).toBe(0)
     }
+  })
+})
+
+describe('calcGroupTotals', () => {
+  it('returns empty objects for no rows', () => {
+    const { groupTotals, groupNames } = calcGroupTotals([])
+    expect(groupTotals).toEqual({})
+    expect(groupNames).toEqual({})
+  })
+
+  it('sums amounts per group and captures name', () => {
+    const rows = [
+      { groupId: 'g1', groupName: 'Food', month: 1, amount: '100.00' },
+      { groupId: 'g1', groupName: 'Food', month: 2, amount: '50.50' },
+      { groupId: 'g2', groupName: 'Transport', month: 1, amount: '200.00' },
+    ]
+    const { groupTotals, groupNames } = calcGroupTotals(rows)
+    expect(groupTotals['g1']).toBeCloseTo(150.5)
+    expect(groupTotals['g2']).toBeCloseTo(200)
+    expect(groupNames['g1']).toBe('Food')
+    expect(groupNames['g2']).toBe('Transport')
+  })
+
+  it('last groupName wins on duplicate', () => {
+    const rows = [
+      { groupId: 'g1', groupName: 'Food', month: 1, amount: '10.00' },
+      { groupId: 'g1', groupName: 'Food Renamed', month: 2, amount: '20.00' },
+    ]
+    const { groupNames } = calcGroupTotals(rows)
+    expect(groupNames['g1']).toBe('Food Renamed')
   })
 })

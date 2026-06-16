@@ -3,11 +3,11 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createExpense, updateExpense, deleteExpense } from '@/app/actions/expenses'
-import type { ExpenseRow } from '@/app/actions/expenses'
+import type { ExpenseRow } from '@/lib/types'
 import { formatAmount } from '@/lib/format'
 import type { Currency } from '@/lib/validations/currency'
-import ExpenseForm from '@/components/ExpenseForm'
-import DeleteConfirmModal from '@/components/DeleteConfirmModal'
+import ExpenseForm from '@/components/expenses/ExpenseForm'
+import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }

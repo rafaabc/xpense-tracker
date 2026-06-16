@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import AnnualSummary from '@/app/(app)/summary/AnnualSummary'
+import AnnualSummary from '@/components/summary/AnnualSummary'
 import type { Matrix } from '@/lib/summaries'
 
 // TC-15-03: Completed-year totals and per-group averages displayed

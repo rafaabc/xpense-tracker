@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { groups, subcategories } from '@/lib/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
-import CategoriesManager from '@/components/CategoriesManager'
+import CategoriesManager from '@/components/categories/CategoriesManager'
 
 export default async function CategoriesPage() {
   const session = await auth()

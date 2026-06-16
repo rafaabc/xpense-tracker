@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ExpenseForm from '@/components/ExpenseForm'
+import ExpenseForm from '@/components/expenses/ExpenseForm'
 
 // TC-10-01: Form requires Amount, Subcategory, Date
 // TC-10-02: Subcategory picker grouped by parent Group (optgroup)

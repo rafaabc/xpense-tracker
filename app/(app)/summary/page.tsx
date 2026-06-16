@@ -11,10 +11,11 @@ import {
   buildMatrix,
   calcMonthTotals,
   calcGroupAverages,
+  calcGroupTotals,
 } from '@/lib/summaries'
-import SummaryTabs from './SummaryTabs'
-import MonthlySummary from './MonthlySummary'
-import AnnualSummary from './AnnualSummary'
+import SummaryTabs from '@/components/summary/SummaryTabs'
+import MonthlySummary from '@/components/summary/MonthlySummary'
+import AnnualSummary from '@/components/summary/AnnualSummary'
 
 function currentYearMonth(): string {
   const d = new Date()
@@ -63,12 +64,7 @@ export default async function SummaryPage({
     const monthTotals = calcMonthTotals(matrix)
     const annualTotal = Object.values(monthTotals).reduce((s, v) => s + v, 0)
 
-    const groupTotals: Record<string, number> = {}
-    const groupNames: Record<string, string> = {}
-    for (const row of rows) {
-      groupTotals[row.groupId] = (groupTotals[row.groupId] ?? 0) + parseFloat(row.amount)
-      groupNames[row.groupId] = row.groupName
-    }
+    const { groupTotals, groupNames } = calcGroupTotals(rows)
     const groupAverages = calcGroupAverages(groupTotals, selectedYear)
 
     annualData = { matrix, monthTotals, annualTotal, groupTotals, groupAverages, groupNames }

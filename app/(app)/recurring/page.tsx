@@ -4,8 +4,8 @@ import { groups, subcategories, users } from '@/lib/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import { listRecurringTemplates } from '@/app/actions/recurring'
-import RecurringManager from '@/components/RecurringManager'
-import type { Currency } from '@/lib/validations/currency'
+import RecurringManager from '@/components/recurring/RecurringManager'
+import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
 export default async function RecurringPage() {
   const session = await auth()
@@ -47,7 +47,7 @@ export default async function RecurringPage() {
     subcategories: subsByGroup.get(g.id) ?? [],
   }))
 
-  const currency = (userRecord?.currency ?? 'DKK') as Currency
+  const currency = (userRecord?.currency ?? DEFAULT_CURRENCY) as Currency
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 860 }}>

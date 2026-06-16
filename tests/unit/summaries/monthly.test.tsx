@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import MonthlySummary from '@/app/(app)/summary/MonthlySummary'
+import MonthlySummary from '@/components/summary/MonthlySummary'
 import type { GroupBreakdown } from '@/lib/summaries'
 
 // TC-14-02: Month selector defaults to current month/year (shows provided month as selected)

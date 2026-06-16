@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import RecurringForm from '@/components/RecurringForm'
+import RecurringForm from '@/components/recurring/RecurringForm'
 
 const groups = [
   {

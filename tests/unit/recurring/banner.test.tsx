@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import RenewalBanner from '@/components/RenewalBanner'
+import RenewalBanner from '@/components/recurring/RenewalBanner'
 
 // Mock server actions + router
 vi.mock('@/app/actions/recurring', () => ({
