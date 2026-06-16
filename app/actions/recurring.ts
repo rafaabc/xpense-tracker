@@ -10,7 +10,6 @@ import { nextExecutionDate, renewalDueDate, isRenewalDue, buildSuccessor } from 
 import type { Interval, RecurringTemplate } from '@/lib/recurrence'
 import { revalidatePath } from 'next/cache'
 import type { RecurringTemplateRow } from '@/lib/types'
-export type { RecurringTemplateRow }
 
 async function requireSession() {
   const session = await auth()

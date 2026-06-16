@@ -7,7 +7,6 @@ import { eq, and, gte, lte, desc } from 'drizzle-orm'
 import { validateAmount, validateExpenseDate } from '@/lib/validations/expenses'
 import { revalidatePath } from 'next/cache'
 import type { ExpenseRow } from '@/lib/types'
-export type { ExpenseRow }
 
 async function requireSession() {
   const session = await auth()
