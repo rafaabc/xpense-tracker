@@ -150,94 +150,114 @@ describe('deleteExpense', () => {
 
 // ---- listExpenses ----
 describe('listExpenses', () => {
-  it('TC-11-01: query is scoped to session user id', async () => {
-    const selectChain = {
+  // listExpenses now runs two queries in Promise.all: rows (with limit/offset) + count.
+  // mockSelect is called twice per invocation.
+  function makePaginatedChains(rows: unknown[] = [], count = 0) {
+    const rowsChain = {
       from: vi.fn().mockReturnThis(),
       innerJoin: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockResolvedValue([]),
+      orderBy: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      offset: vi.fn().mockResolvedValue(rows),
     }
-    mockSelect.mockReturnValue(selectChain)
+    const countChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue([{ count }]),
+    }
+    mockSelect
+      .mockReturnValueOnce(rowsChain)
+      .mockReturnValueOnce(countChain)
+    return { rowsChain, countChain }
+  }
+
+  it('TC-11-01: query is scoped to session user id', async () => {
+    const { rowsChain } = makePaginatedChains()
 
     const { listExpenses } = await import('@/app/actions/expenses')
     await listExpenses({})
 
-    // where should be called with an arg including the userId
-    const whereArg = selectChain.where.mock.calls[0][0]
+    const whereArg = rowsChain.where.mock.calls[0][0]
     expect(JSON.stringify(whereArg)).toContain('user-1')
   })
 
   it('TC-11-06: orderBy called with date descending', async () => {
-    const selectChain = {
-      from: vi.fn().mockReturnThis(),
-      innerJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockResolvedValue([]),
-    }
-    mockSelect.mockReturnValue(selectChain)
+    const { rowsChain } = makePaginatedChains()
 
     const { listExpenses } = await import('@/app/actions/expenses')
     await listExpenses({})
 
-    expect(selectChain.orderBy).toHaveBeenCalledOnce()
-    const orderArg = selectChain.orderBy.mock.calls[0][0]
-    // desc() wraps the date column
+    expect(rowsChain.orderBy).toHaveBeenCalledOnce()
+    const orderArg = rowsChain.orderBy.mock.calls[0][0]
     expect(JSON.stringify(orderArg)).toContain('desc')
   })
 
   it('TC-11-07: from/to date filter passed to where clause', async () => {
-    const selectChain = {
-      from: vi.fn().mockReturnThis(),
-      innerJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockResolvedValue([]),
-    }
-    mockSelect.mockReturnValue(selectChain)
+    const { rowsChain } = makePaginatedChains()
 
     const { listExpenses } = await import('@/app/actions/expenses')
     await listExpenses({ from: '2026-01-01', to: '2026-06-15' })
 
-    const whereArg = selectChain.where.mock.calls[0][0]
+    const whereArg = rowsChain.where.mock.calls[0][0]
     const serialized = JSON.stringify(whereArg)
     expect(serialized).toContain('2026-01-01')
     expect(serialized).toContain('2026-06-15')
   })
 
   it('TC-11-08/09: group and subcategory filters passed to where clause', async () => {
-    const selectChain = {
-      from: vi.fn().mockReturnThis(),
-      innerJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockResolvedValue([]),
-    }
-    mockSelect.mockReturnValue(selectChain)
+    const { rowsChain } = makePaginatedChains()
 
     const { listExpenses } = await import('@/app/actions/expenses')
     await listExpenses({ group: 'grp-1', subcategory: 'sub-1' })
 
-    const whereArg = selectChain.where.mock.calls[0][0]
+    const whereArg = rowsChain.where.mock.calls[0][0]
     const serialized = JSON.stringify(whereArg)
     expect(serialized).toContain('grp-1')
     expect(serialized).toContain('sub-1')
   })
 
   it('TC-11-10: all four filters applied together compose the where clause', async () => {
-    const selectChain = {
-      from: vi.fn().mockReturnThis(),
-      innerJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockResolvedValue([]),
-    }
-    mockSelect.mockReturnValue(selectChain)
+    const { rowsChain } = makePaginatedChains()
 
     const { listExpenses } = await import('@/app/actions/expenses')
     await listExpenses({ from: '2026-01-01', to: '2026-06-30', group: 'grp-1', subcategory: 'sub-1' })
 
-    const whereArg = selectChain.where.mock.calls[0][0]
+    const whereArg = rowsChain.where.mock.calls[0][0]
     const serialized = JSON.stringify(whereArg)
     expect(serialized).toContain('2026-01-01')
     expect(serialized).toContain('2026-06-30')
     expect(serialized).toContain('grp-1')
     expect(serialized).toContain('sub-1')
+  })
+
+  it('applies limit(25) and offset based on page', async () => {
+    const { rowsChain } = makePaginatedChains([], 75)
+
+    const { listExpenses } = await import('@/app/actions/expenses')
+    await listExpenses({}, 3)
+
+    expect(rowsChain.limit).toHaveBeenCalledWith(25)
+    expect(rowsChain.offset).toHaveBeenCalledWith(50) // (3-1)*25
+  })
+
+  it('returns { rows, total } with total from count query', async () => {
+    const fakeRows = [{ id: 'exp-1' }]
+    makePaginatedChains(fakeRows, 42)
+
+    const { listExpenses } = await import('@/app/actions/expenses')
+    const result = await listExpenses({})
+
+    expect(result).toEqual({ rows: fakeRows, total: 42 })
+  })
+
+  it('defaults to page 1 (offset 0) when no page specified', async () => {
+    const { rowsChain } = makePaginatedChains()
+
+    const { listExpenses } = await import('@/app/actions/expenses')
+    await listExpenses({})
+
+    expect(rowsChain.limit).toHaveBeenCalledWith(25)
+    expect(rowsChain.offset).toHaveBeenCalledWith(0)
   })
 })

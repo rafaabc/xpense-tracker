@@ -3,10 +3,10 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { expenses, subcategories, groups } from '@/lib/schema'
-import { eq, and, gte, lte, desc } from 'drizzle-orm'
+import { eq, and, gte, lte, desc, sql } from 'drizzle-orm'
 import { validateAmount, validateExpenseDate } from '@/lib/validations/expenses'
 import { revalidatePath } from 'next/cache'
-import type { ExpenseRow } from '@/lib/types'
+import { EXPENSES_PAGE_SIZE, type ExpenseRow } from '@/lib/types'
 
 async function requireSession() {
   const session = await auth()
@@ -92,7 +92,12 @@ export interface ExpenseFilters {
   subcategory?: string
 }
 
-export async function listExpenses(filters: ExpenseFilters): Promise<ExpenseRow[]> {
+// Page size constant lives in lib/types.ts (use-server files can only export async functions)
+
+export async function listExpenses(
+  filters: ExpenseFilters,
+  page = 1,
+): Promise<{ rows: ExpenseRow[]; total: number }> {
   const userId = await requireSession()
 
   const conditions = [
@@ -103,21 +108,31 @@ export async function listExpenses(filters: ExpenseFilters): Promise<ExpenseRow[
     ...(filters.subcategory ? [eq(subcategories.id, filters.subcategory)] : []),
   ]
 
-  const rows = await db
-    .select({
-      id: expenses.id,
-      amount: expenses.amount,
-      date: expenses.date,
-      subcategoryId: subcategories.id,
-      subcategoryName: subcategories.name,
-      groupId: groups.id,
-      groupName: groups.name,
-    })
-    .from(expenses)
-    .innerJoin(subcategories, eq(expenses.subcategoryId, subcategories.id))
-    .innerJoin(groups, eq(subcategories.groupId, groups.id))
-    .where(and(...conditions))
-    .orderBy(desc(expenses.date))
+  const [rows, [{ count }]] = await Promise.all([
+    db
+      .select({
+        id: expenses.id,
+        amount: expenses.amount,
+        date: expenses.date,
+        subcategoryId: subcategories.id,
+        subcategoryName: subcategories.name,
+        groupId: groups.id,
+        groupName: groups.name,
+      })
+      .from(expenses)
+      .innerJoin(subcategories, eq(expenses.subcategoryId, subcategories.id))
+      .innerJoin(groups, eq(subcategories.groupId, groups.id))
+      .where(and(...conditions))
+      .orderBy(desc(expenses.date))
+      .limit(EXPENSES_PAGE_SIZE)
+      .offset((page - 1) * EXPENSES_PAGE_SIZE),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(expenses)
+      .innerJoin(subcategories, eq(expenses.subcategoryId, subcategories.id))
+      .innerJoin(groups, eq(subcategories.groupId, groups.id))
+      .where(and(...conditions)),
+  ])
 
-  return rows
+  return { rows, total: count ?? 0 }
 }
