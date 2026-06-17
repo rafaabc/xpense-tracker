@@ -4,6 +4,7 @@ import { groups, subcategories, users } from '@/lib/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import { listExpenses } from '@/app/actions/expenses'
+import { EXPENSES_PAGE_SIZE } from '@/lib/types'
 import ExpensesManager from '@/components/expenses/ExpensesManager'
 import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
@@ -12,6 +13,7 @@ interface SearchParams {
   to?: string
   group?: string
   subcategory?: string
+  page?: string
 }
 
 export default async function ExpensesPage({
@@ -25,9 +27,11 @@ export default async function ExpensesPage({
   const userId = session.user.id
   const filters = await searchParams
 
+  const requestedPage = Math.max(1, parseInt(filters.page ?? '1', 10) || 1)
+
   // Fetch expenses, groups, currency in parallel
-  const [expenses, userGroups, [userRecord]] = await Promise.all([
-    listExpenses(filters),
+  const [{ rows: expenses, total }, userGroups, [userRecord]] = await Promise.all([
+    listExpenses(filters, requestedPage),
     db
       .select({ id: groups.id, name: groups.name })
       .from(groups)
@@ -61,6 +65,7 @@ export default async function ExpensesPage({
   }))
 
   const currency = (userRecord?.currency ?? DEFAULT_CURRENCY) as Currency
+  const totalPages = Math.max(1, Math.ceil(total / EXPENSES_PAGE_SIZE))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 860 }}>
@@ -277,6 +282,7 @@ export default async function ExpensesPage({
         expenses={expenses}
         groups={groupsWithSubs}
         currency={currency}
+        pagination={{ page: requestedPage, totalPages, total, pageSize: EXPENSES_PAGE_SIZE }}
       />
     </div>
   )

@@ -381,7 +381,7 @@ export default function AnnualSummary({
                     <td
                       style={{
                         fontWeight: 600,
-                        color: '#128A5E',
+                        color: 'var(--ink-900)',
                         padding: '6px 12px 4px 0',
                         whiteSpace: 'nowrap',
                         borderTop: '1px solid var(--line)',
@@ -401,8 +401,8 @@ export default function AnnualSummary({
                             fontVariantNumeric: 'tabular-nums',
                             fontSize: 'var(--text-xs)',
                             fontWeight: 600,
-                            background: 'var(--emerald-50)',
-                            color: '#128A5E',
+                            background: 'transparent',
+                            color: 'var(--ink-900)',
                             borderRadius: 4,
                             borderTop: '1px solid var(--line)',
                           }}

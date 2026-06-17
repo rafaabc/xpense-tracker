@@ -1,5 +1,7 @@
 import type { Interval } from '@/lib/recurrence'
 
+export const EXPENSES_PAGE_SIZE = 25
+
 export interface ExpenseRow {
   id: string
   amount: string
