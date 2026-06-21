@@ -9,6 +9,7 @@ import { formatAmount } from '@/lib/format'
 import type { Currency } from '@/lib/validations/currency'
 import ExpenseForm from '@/components/expenses/ExpenseForm'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import { useToast } from '@/components/shared/Toast'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }
@@ -34,35 +35,45 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
   const router = useRouter()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
+  const toast = useToast()
   const [editState, setEditState] = useState<EditState>(null)
   const [deleteState, setDeleteState] = useState<DeleteState>(null)
-  const [error, setError] = useState<string | null>(null)
 
   function refresh() { router.refresh() }
 
   async function handleCreate(payload: { amount: string; subcategoryId: string; date: string }) {
-    await createExpense(payload)
-    setEditState(null)
-    refresh()
+    try {
+      await createExpense(payload)
+      setEditState(null)
+      refresh()
+      toast.success('Expense added')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
   async function handleUpdate(payload: { amount: string; subcategoryId: string; date: string }) {
     if (editState?.kind !== 'edit') return
-    await updateExpense(editState.expense.id, payload)
-    setEditState(null)
-    refresh()
+    try {
+      await updateExpense(editState.expense.id, payload)
+      setEditState(null)
+      refresh()
+      toast.success('Expense updated')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
   function handleDeleteConfirm() {
     if (!deleteState) return
-    setError(null)
     startTransition(async () => {
       try {
         await deleteExpense(deleteState.id)
         setDeleteState(null)
         refresh()
+        toast.success('Expense deleted')
       } catch (e) {
-        setError((e as Error).message)
+        toast.error((e as Error).message)
         setDeleteState(null)
       }
     })
@@ -128,22 +139,6 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {error && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--negative-50)',
-            borderRadius: 'var(--radius-md)',
-            padding: '10px 14px',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 'var(--text-sm)',
-            color: 'var(--negative-700)',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
       {/* Add expense button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button

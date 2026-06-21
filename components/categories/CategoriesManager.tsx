@@ -11,6 +11,7 @@ import {
 import { validateGroupName } from '@/lib/validations/groups'
 import { validateSubcategoryName } from '@/lib/validations/subcategories'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import { useToast } from '@/components/shared/Toast'
 
 interface SubcategoryRow { id: string; name: string }
 interface GroupRow { id: string; name: string; subcategories: SubcategoryRow[] }
@@ -27,6 +28,7 @@ type ModalState =
 export default function CategoriesManager({ groups }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const toast = useToast()
   const [modal, setModal] = useState<ModalState>(null)
 
   // Inline form state
@@ -40,7 +42,6 @@ export default function CategoriesManager({ groups }: Props) {
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null)
   const [renameSubValue, setRenameSubValue] = useState('')
 
-  const [error, setError] = useState<string | null>(null)
   const newGroupInputRef = useRef<HTMLInputElement>(null)
   const newSubInputRef = useRef<HTMLInputElement>(null)
 
@@ -48,41 +49,41 @@ export default function CategoriesManager({ groups }: Props) {
 
   async function handleCreateGroup() {
     const check = validateGroupName(newGroupName)
-    if (!check.ok) { setError(check.error); return }
-    setError(null)
+    if (!check.ok) { toast.error(check.error); return }
     try {
       await createGroup(newGroupName)
       setNewGroupName('')
       setAddingGroup(false)
       refresh()
+      toast.success('Group added')
     } catch (e) {
-      setError((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 
   async function handleRenameGroup(id: string) {
     const check = validateGroupName(renameGroupValue)
-    if (!check.ok) { setError(check.error); return }
-    setError(null)
+    if (!check.ok) { toast.error(check.error); return }
     try {
       await renameGroup(id, renameGroupValue)
       setRenamingGroupId(null)
       refresh()
+      toast.success('Group renamed')
     } catch (e) {
-      setError((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 
   async function handleDeleteGroup() {
     if (modal?.kind !== 'deleteGroup') return
-    setError(null)
     startTransition(async () => {
       try {
         await deleteGroup(modal.id)
         setModal(null)
         refresh()
+        toast.success('Group deleted')
       } catch (e) {
-        setError((e as Error).message)
+        toast.error((e as Error).message)
         setModal(null)
       }
     })
@@ -90,41 +91,41 @@ export default function CategoriesManager({ groups }: Props) {
 
   async function handleCreateSubcategory(groupId: string) {
     const check = validateSubcategoryName(newSubName)
-    if (!check.ok) { setError(check.error); return }
-    setError(null)
+    if (!check.ok) { toast.error(check.error); return }
     try {
       await createSubcategory(newSubName, groupId)
       setNewSubName('')
       setAddingSubFor(null)
       refresh()
+      toast.success('Subcategory added')
     } catch (e) {
-      setError((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 
   async function handleRenameSubcategory(id: string) {
     const check = validateSubcategoryName(renameSubValue)
-    if (!check.ok) { setError(check.error); return }
-    setError(null)
+    if (!check.ok) { toast.error(check.error); return }
     try {
       await renameSubcategory(id, renameSubValue)
       setRenamingSubId(null)
       refresh()
+      toast.success('Subcategory renamed')
     } catch (e) {
-      setError((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 
   async function handleDeleteSubcategory() {
     if (modal?.kind !== 'deleteSubcategory') return
-    setError(null)
     startTransition(async () => {
       try {
         await deleteSubcategory(modal.id)
         setModal(null)
         refresh()
+        toast.success('Subcategory deleted')
       } catch (e) {
-        setError((e as Error).message)
+        toast.error((e as Error).message)
         setModal(null)
       }
     })
@@ -192,22 +193,6 @@ export default function CategoriesManager({ groups }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {error && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--negative-50)',
-            borderRadius: 'var(--radius-md)',
-            padding: '10px 14px',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 'var(--text-sm)',
-            color: 'var(--negative-700)',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
       {groups.map((group) => (
         <div
           key={group.id}

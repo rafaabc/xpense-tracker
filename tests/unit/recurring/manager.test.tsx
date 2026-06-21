@@ -3,6 +3,10 @@ import { render, screen } from '@testing-library/react'
 import RecurringManager from '@/components/recurring/RecurringManager'
 import type { RecurringTemplateRow } from '@/lib/types'
 
+vi.mock('@/components/shared/Toast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}))
+
 // TC-08-05: List of active recurring templates is displayed
 // TC-08-06: Each row shows amount, subcategory, interval, next execution date
 
