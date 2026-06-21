@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import RenewalBanner from '@/components/recurring/RenewalBanner'
 
+vi.mock('@/components/shared/Toast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}))
+
 // Mock server actions + router
 vi.mock('@/app/actions/recurring', () => ({
   confirmRenewal: vi.fn().mockResolvedValue(undefined),

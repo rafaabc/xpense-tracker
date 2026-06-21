@@ -13,6 +13,7 @@ import { INTERVALS } from '@/lib/recurrence'
 import type { Currency } from '@/lib/validations/currency'
 import RecurringForm from '@/components/recurring/RecurringForm'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
+import { useToast } from '@/components/shared/Toast'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }
@@ -33,39 +34,49 @@ type DeleteState = { id: string; label: string } | null
 export default function RecurringManager({ templates, groups, currency }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const toast = useToast()
   const [editState, setEditState] = useState<EditState>(null)
   const [deleteState, setDeleteState] = useState<DeleteState>(null)
-  const [error, setError] = useState<string | null>(null)
 
   function refresh() { router.refresh() }
 
   async function handleCreate(payload: {
     amount: string; subcategoryId: string; startDate: string; interval: string; dayOfMonth: string
   }) {
-    await createRecurringTemplate(payload)
-    setEditState(null)
-    refresh()
+    try {
+      await createRecurringTemplate(payload)
+      setEditState(null)
+      refresh()
+      toast.success('Recurring expense added')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
   async function handleUpdate(payload: {
     amount: string; subcategoryId: string; startDate: string; interval: string; dayOfMonth: string
   }) {
     if (editState?.kind !== 'edit') return
-    await updateRecurringTemplate(editState.template.id, payload)
-    setEditState(null)
-    refresh()
+    try {
+      await updateRecurringTemplate(editState.template.id, payload)
+      setEditState(null)
+      refresh()
+      toast.success('Recurring expense updated')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
   function handleDeleteConfirm() {
     if (!deleteState) return
-    setError(null)
     startTransition(async () => {
       try {
         await deleteRecurringTemplate(deleteState.id)
         setDeleteState(null)
         refresh()
+        toast.success('Recurring expense deleted')
       } catch (e) {
-        setError((e as Error).message)
+        toast.error((e as Error).message)
         setDeleteState(null)
       }
     })
@@ -98,22 +109,6 @@ export default function RecurringManager({ templates, groups, currency }: Props)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {error && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--negative-50)',
-            borderRadius: 'var(--radius-md)',
-            padding: '10px 14px',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 'var(--text-sm)',
-            color: 'var(--negative-700)',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
       {/* Add button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button

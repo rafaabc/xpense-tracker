@@ -1,6 +1,8 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import AppNav from "@/components/shared/AppNav";
+import { ToastProvider } from "@/components/shared/Toast";
+import "@/app/styles/app-shell.css";
 
 export default async function AppLayout({
   children,
@@ -9,16 +11,6 @@ export default async function AppLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/");
-
-  const navLinkStyle = {
-    fontFamily: 'var(--font-sans)',
-    fontSize: 'var(--text-sm)',
-    fontWeight: 600,
-    color: 'var(--ink-700)',
-    textDecoration: 'none',
-    padding: '4px 10px',
-    borderRadius: 'var(--radius-sm)',
-  } as const
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', background: 'var(--paper)' }}>
@@ -51,14 +43,7 @@ export default async function AppLayout({
             xpense
           </span>
 
-          <nav style={{ display: 'flex', gap: 4, flex: 1 }}>
-            <Link href="/dashboard" style={navLinkStyle}>Dashboard</Link>
-            <Link href="/expenses" style={navLinkStyle}>Expenses</Link>
-            <Link href="/categories" style={navLinkStyle}>Categories</Link>
-            <Link href="/recurring" style={navLinkStyle}>Recurring</Link>
-            <Link href="/summary" style={navLinkStyle}>Summary</Link>
-            <Link href="/settings" style={navLinkStyle}>Settings</Link>
-          </nav>
+          <AppNav />
 
           <form
             action={async () => {
@@ -84,8 +69,10 @@ export default async function AppLayout({
           </form>
         </div>
       </header>
-      <main style={{ maxWidth: 1024, margin: '0 auto', width: '100%', flex: 1, padding: '32px 24px' }}>
-        {children}
+      <main className="app-main" style={{ maxWidth: 1024, margin: '0 auto', width: '100%', flex: 1, padding: '32px 24px' }}>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </main>
     </div>
   );

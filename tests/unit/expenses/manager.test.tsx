@@ -3,6 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ExpensesManager from '@/components/expenses/ExpensesManager'
 
+vi.mock('@/components/shared/Toast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}))
+
 // TC-11-03: Row displays Group name
 // TC-11-04: Row displays Subcategory name
 // TC-11-05: Row displays Date

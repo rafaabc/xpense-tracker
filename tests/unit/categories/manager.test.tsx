@@ -3,6 +3,10 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CategoriesManager from '@/components/categories/CategoriesManager'
 
+vi.mock('@/components/shared/Toast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}))
+
 // TC-06-05: Delete confirmation modal shown for group
 // TC-06-06: Modal warns about cascade when group has subcategories
 // TC-06-11: Cancel leaves state unchanged

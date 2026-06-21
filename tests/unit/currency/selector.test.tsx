@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import CurrencySelector from '@/components/currency/CurrencySelector'
 import { updateCurrency } from '@/app/actions/currency'
 
+vi.mock('@/components/shared/Toast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}))
+
 // TC-05-01: DKK and BRL options are shown
 // TC-05-02: Only DKK and BRL are offered
 // TC-05-03: Default currency for new account is DKK (selector defaults to DKK)

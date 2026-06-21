@@ -8,6 +8,7 @@ import { validateAmount } from '@/lib/validations/expenses'
 import { formatAmount } from '@/lib/format'
 import { INTERVALS } from '@/lib/recurrence'
 import type { Currency } from '@/lib/validations/currency'
+import { useToast } from '@/components/shared/Toast'
 
 interface Props {
   template: RecurringTemplateRow
@@ -17,30 +18,29 @@ interface Props {
 export default function RenewalBanner({ template, currency }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const toast = useToast()
   const [dismissed, setDismissed] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [newAmount, setNewAmount] = useState(template.amount)
   const [amountError, setAmountError] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
 
   if (dismissed) return null
 
   function handleConfirm() {
-    setActionError(null)
     startTransition(async () => {
       try {
         await confirmRenewal(template.id)
         router.refresh()
         setDismissed(true)
+        toast.success('Renewal confirmed')
       } catch (e) {
-        setActionError((e as Error).message)
+        toast.error((e as Error).message)
       }
     })
   }
 
   function handleUpdate() {
     setAmountError(null)
-    setActionError(null)
 
     const v = validateAmount(newAmount)
     if (!v.ok) { setAmountError(v.error); return }
@@ -50,8 +50,9 @@ export default function RenewalBanner({ template, currency }: Props) {
         await updateRenewal(template.id, newAmount.trim())
         router.refresh()
         setDismissed(true)
+        toast.success('Renewal updated')
       } catch (e) {
-        setActionError((e as Error).message)
+        toast.error((e as Error).message)
       }
     })
   }
@@ -134,22 +135,6 @@ export default function RenewalBanner({ template, currency }: Props) {
           Dismiss
         </button>
       </div>
-
-      {actionError && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--negative-50)',
-            borderRadius: 'var(--radius-md)',
-            padding: '8px 12px',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 'var(--text-xs)',
-            color: 'var(--negative-700)',
-          }}
-        >
-          {actionError}
-        </div>
-      )}
 
       {/* TC-09-04: Confirm or Update value */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 10 }}>

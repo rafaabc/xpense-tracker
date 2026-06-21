@@ -1,0 +1,28 @@
+/* ============================================================
+   Xpense — App shell responsive layout
+   Desktop: top nav.  Mobile (<768px): bottom tab bar.
+   ============================================================ */
+
+.app-nav-top {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.app-nav-bottom {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .app-nav-top {
+    display: none;
+  }
+
+  .app-nav-bottom {
+    display: flex;
+  }
+
+  .app-main {
+    padding-bottom: 84px !important;
+  }
+}
