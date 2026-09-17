@@ -66,4 +66,25 @@ test.describe("Create expense — smoke (US-10)", () => {
     // so substring match would be ambiguous.
     await expect(page.getByText("E2E Subcategory", { exact: true })).toBeVisible();
   });
+
+  test("TC-10-09: comma decimal separator (361,61) is accepted and stored as 361.61", async ({
+    page,
+  }) => {
+    await page.goto("/expenses");
+
+    await page.getByRole("button", { name: /add expense/i }).click();
+
+    // DKK/BRL keyboards emit a comma for cents — the form must accept it.
+    await page.getByLabel(/amount/i).fill("361,61");
+
+    await page
+      .getByRole("dialog", { name: /add expense/i })
+      .getByLabel(/subcategory/i)
+      .selectOption({ label: "E2E Subcategory" });
+
+    await page.getByRole("button", { name: /^save$/i }).click();
+
+    // Stored/displayed with a dot, per formatAmount — no validation error, no truncation to 361.
+    await expect(page.getByText(/361\.61/)).toBeVisible({ timeout: 10000 });
+  });
 });

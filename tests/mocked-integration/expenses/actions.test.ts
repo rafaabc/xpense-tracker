@@ -97,6 +97,16 @@ describe('createExpense', () => {
     await expect(createExpense({ amount: '10.00', subcategoryId: 'sub-1', date: '2099-01-01' }))
       .rejects.toThrow()
   })
+
+  it('normalizes a comma decimal separator to dot before persisting (361,61 -> 361.61)', async () => {
+    const valuesSpy = vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'exp-1' }]) })
+    mockInsert.mockReturnValue({ values: valuesSpy })
+
+    const { createExpense } = await import('@/app/actions/expenses')
+    await createExpense({ amount: '361,61', subcategoryId: 'sub-1', date: '2026-06-10' })
+
+    expect(valuesSpy).toHaveBeenCalledWith(expect.objectContaining({ amount: '361.61' }))
+  })
 })
 
 // ---- updateExpense ----
