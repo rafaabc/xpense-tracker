@@ -1,0 +1,58 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    ignore:
+      # esbuild/@esbuild-kit/* advisories under drizzle-kit only have a
+      # semver-major *downgrade* fix (0.31.x -> 0.18.1). drizzle-kit is a
+      # dev-only CLI (db:push/db:studio), never shipped or run against
+      # untrusted input. Wait for an upstream fix instead of opening
+      # unmergeable PRs every week.
+      - dependency-name: 'drizzle-kit'
+    groups:
+      production-dependencies:
+        dependency-type: 'production'
+        update-types:
+          - 'minor'
+          - 'patch'
+      development-dependencies:
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+      next-major:
+        patterns:
+          - 'next'
+          - 'eslint-config-next'
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+        update-types:
+          - 'major'
+      test-tooling-major:
+        patterns:
+          - 'vitest'
+          - '@vitest/coverage-v8'
+          - '@playwright/test'
+          - 'jsdom'
+        update-types:
+          - 'major'
+      drizzle-major:
+        patterns:
+          - 'drizzle-orm'
+          - 'drizzle-kit'
+        update-types:
+          - 'major'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      github-actions:
+        patterns:
+          - '*'

@@ -43,6 +43,10 @@ jobs:
 
   e2e:
     needs: [lint, test]
+    # Dependabot PRs run with Dependabot secrets, not Actions secrets, so
+    # NEON_API_KEY etc. are empty and this job can never pass on them.
+    # lint + test still gate dependency bumps; e2e runs on human PRs and main.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     # Auth secrets available to all steps; DATABASE_URL is injected via .env.local
     # after the Neon branch is created (see "Write .env.local" step).
