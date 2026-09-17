@@ -69,7 +69,7 @@ export async function createRecurringTemplate(payload: RecurringPayload) {
     .values({
       userId,
       subcategoryId: payload.subcategoryId,
-      amount: payload.amount.trim(),
+      amount: amountVal.value,
       startDate: payload.startDate,
       interval: payload.interval as Interval,
       dayOfMonth: parseInt(payload.dayOfMonth, 10),
@@ -99,7 +99,7 @@ export async function updateRecurringTemplate(id: string, payload: RecurringPayl
   await db
     .update(recurringTemplates)
     .set({
-      amount: payload.amount.trim(),
+      amount: amountVal.value,
       subcategoryId: payload.subcategoryId,
       interval: payload.interval as Interval,
       dayOfMonth: parseInt(payload.dayOfMonth, 10),
@@ -173,7 +173,7 @@ export async function updateRenewal(id: string, newAmount: string) {
   if (!amountVal.ok) throw new Error(amountVal.error)
 
   const tmpl = await assertTemplateOwnership(id, userId)
-  const successor = buildSuccessor(tmpl, newAmount.trim())
+  const successor = buildSuccessor(tmpl, amountVal.value)
 
   // Deactivate old template
   await db

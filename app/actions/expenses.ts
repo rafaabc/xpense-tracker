@@ -50,7 +50,7 @@ export async function createExpense({ amount, subcategoryId, date }: ExpensePayl
 
   const [expense] = await db
     .insert(expenses)
-    .values({ userId, subcategoryId, amount: amount.trim(), date })
+    .values({ userId, subcategoryId, amount: amountVal.value, date })
     .returning()
 
   revalidatePath('/expenses')
@@ -70,7 +70,7 @@ export async function updateExpense(id: string, { amount, subcategoryId, date }:
 
   await db
     .update(expenses)
-    .set({ amount: amount.trim(), subcategoryId, date })
+    .set({ amount: amountVal.value, subcategoryId, date })
     .where(eq(expenses.id, id))
 
   revalidatePath('/expenses')

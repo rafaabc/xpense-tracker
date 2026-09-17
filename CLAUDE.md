@@ -97,7 +97,7 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 ## Shared Utilities (built in Slice 3)
 
 - `lib/format.ts` — `formatAmount(amount, currency)` — use for all money display
-- `lib/validations/expenses.ts` — `validateAmount` + `validateExpenseDate` — reuse for recurring templates (Slice 5)
+- `lib/validations/expenses.ts` — `validateAmount` + `validateExpenseDate` — reuse for recurring templates (Slice 5). `validateAmount` accepts either `.` or `,` as the decimal separator (DKK/BRL `inputMode="decimal"` keypads emit a comma) and returns `{ ok: true, value }` with `value` normalized to a dot — always persist `value`, never the raw input
 - Cross-tenant guard on expenses: `eq(expenses.userId, userId)` — see `app/actions/expenses.ts`
 
 ## Shared Utilities (built in Slice 4)
