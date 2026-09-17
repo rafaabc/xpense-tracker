@@ -12,6 +12,16 @@ updates:
       # untrusted input. Wait for an upstream fix instead of opening
       # unmergeable PRs every week.
       - dependency-name: 'drizzle-kit'
+      # typescript-eslint does not support TS 7.0 yet (typescript-eslint#10940),
+      # so eslint-config-next breaks on any TS major bump above 5.x. Minor/patch
+      # for typescript still flow normally.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      # eslint-plugin-react (bundled in eslint-config-next) calls the removed
+      # context.getFilename() API on ESLint 10, breaking react/display-name.
+      # Minor/patch for eslint still flow normally.
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
     groups:
       production-dependencies:
         dependency-type: 'production'
@@ -39,6 +49,10 @@ updates:
           - '@vitest/coverage-v8'
           - '@playwright/test'
           - 'jsdom'
+          # vitest 5 peer-requires @types/node ^22 || >=24; grouped here so
+          # the two always bump together instead of splitting into an
+          # unmergeable PR (see #29/#33).
+          - '@types/node'
         update-types:
           - 'major'
       drizzle-major:
