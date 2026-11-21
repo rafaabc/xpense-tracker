@@ -3,7 +3,8 @@ import { test, expect } from "@playwright/test";
 // TC-02-10: Global redirect-to-login enforced across all protected routes
 
 const protectedRoutes = [
-  "/dashboard",
+  "/expenses",
+  "/recurring",
   "/categories",
   "/settings",
   "/groups/123",

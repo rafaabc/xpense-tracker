@@ -110,7 +110,7 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 
 - `lib/recurrence.ts` — pure date/interval logic: `clampDayOfMonth`, `addInterval`, `occurrencesDue`, `nextExecutionDate`, `renewalDueDate`, `isRenewalDue`, `buildSuccessor`, `INTERVALS`
 - `lib/validations/recurring.ts` — `validateDayOfMonth`, `validateInterval`, `validateStartDate`
-- `lib/recurrence-engine.ts` — session-agnostic: `runCatchUp(userId, today)`, `runCatchUpAllUsers(today)` — shared by dashboard lazy catch-up + daily Vercel Cron; **never call `revalidatePath` inside this module** — it is called during RSC render; call `revalidatePath` in the caller (cron route handler) only
+- `lib/recurrence-engine.ts` — session-agnostic: `runCatchUp(userId, today)`, `runCatchUpAllUsers(today)` — shared by expenses-page lazy catch-up + daily Vercel Cron; **never call `revalidatePath` inside this module** — it is called during RSC render; call `revalidatePath` in the caller (cron route handler) only
 - `app/actions/recurring.ts` — CRUD + `confirmRenewal`, `updateRenewal`, `getDueRenewals`
 - Cron bearer guard: `CRON_SECRET` env var must be set in `.env.local`; Vercel injects it automatically in production
 - Idempotency: `lastGeneratedDate` column on `recurringTemplates` — generation emits only dates strictly after this marker

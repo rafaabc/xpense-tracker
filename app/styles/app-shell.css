@@ -13,6 +13,17 @@
   display: none;
 }
 
+/* Recurring list: table on desktop, stacked card on mobile */
+.rec-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px 140px auto;
+  gap: 16px;
+}
+
+.rec-mobile-only {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .app-nav-top {
     display: none;
@@ -24,5 +35,32 @@
 
   .app-main {
     padding-bottom: 84px !important;
+  }
+
+  .rec-header {
+    display: none;
+  }
+
+  .rec-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "cat amount"
+      "interval next"
+      "actions actions";
+    row-gap: 8px;
+  }
+
+  .rec-cat { grid-area: cat; }
+  .rec-amount { grid-area: amount; text-align: right; }
+  .rec-interval { grid-area: interval; }
+  .rec-next { grid-area: next; text-align: right; }
+  .rec-actions { grid-area: actions; }
+
+  .rec-mobile-only {
+    display: inline;
+  }
+
+  .rec-btn {
+    min-height: 44px;
   }
 }

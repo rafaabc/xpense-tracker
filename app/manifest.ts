@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Xpense tracker",
     short_name: "Xpense",
     description: "Personal expense tracker",
-    start_url: "/",
+    start_url: "/expenses",
     display: "standalone",
     background_color: "#F7F5F0",
     theme_color: "#128A5E",

@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { groups, subcategories, users } from '@/lib/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { listExpenses } from '@/app/actions/expenses'
+import { getDueRenewals } from '@/app/actions/recurring'
+import { runCatchUp } from '@/lib/recurrence-engine'
+import RenewalBanner from '@/components/recurring/RenewalBanner'
 import { EXPENSES_PAGE_SIZE } from '@/lib/types'
 import ExpensesManager from '@/components/expenses/ExpensesManager'
 import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
@@ -29,8 +33,12 @@ export default async function ExpensesPage({
 
   const requestedPage = Math.max(1, parseInt(filters.page ?? '1', 10) || 1)
 
-  // Fetch expenses, groups, currency in parallel
-  const [{ rows: expenses, total }, userGroups, [userRecord]] = await Promise.all([
+  // Lazy catch-up: generate overdue recurring expenses BEFORE listing (TC-08-03)
+  const today = new Date().toISOString().slice(0, 10)
+  await runCatchUp(userId, today)
+
+  // Fetch expenses, groups, currency, due renewals in parallel
+  const [{ rows: expenses, total }, userGroups, [userRecord], dueRenewals] = await Promise.all([
     listExpenses(filters, requestedPage),
     db
       .select({ id: groups.id, name: groups.name })
@@ -41,6 +49,7 @@ export default async function ExpensesPage({
       .select({ currency: users.currency })
       .from(users)
       .where(eq(users.id, userId)),
+    getDueRenewals(),
   ])
 
   const groupIds = userGroups.map((g) => g.id)
@@ -94,6 +103,31 @@ export default async function ExpensesPage({
           Track and manage your spending history.
         </p>
       </div>
+
+      {/* Annual renewal banners (TC-09-01/02/03/04) */}
+      {dueRenewals.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {dueRenewals.map((tmpl) => (
+            <RenewalBanner key={tmpl.id} template={tmpl} currency={currency} />
+          ))}
+        </div>
+      )}
+
+      {userGroups.length === 0 && (
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 'var(--text-md)',
+            color: 'var(--ink-400)',
+            margin: 0,
+          }}
+        >
+          Add groups and subcategories to get started.{' '}
+          <Link href="/categories" style={{ color: 'var(--brand)', fontWeight: 600 }}>
+            Go to categories
+          </Link>
+        </p>
+      )}
 
       {/* Filter bar */}
       <form

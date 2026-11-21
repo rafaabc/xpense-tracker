@@ -10,7 +10,6 @@ export async function GET(req: Request) {
   const today = new Date().toISOString().slice(0, 10)
   await runCatchUpAllUsers(today)
   revalidatePath('/expenses')
-  revalidatePath('/dashboard')
 
   return Response.json({ ok: true })
 }

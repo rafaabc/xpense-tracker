@@ -162,7 +162,7 @@ export async function confirmRenewal(id: string) {
     .set({ lastRenewedAt: renewalDueDate(tmpl) })
     .where(eq(recurringTemplates.id, id))
 
-  revalidatePath('/dashboard')
+  revalidatePath('/expenses')
 }
 
 /** TC-09-06/07/08: Update value — deprecate old, create successor */
@@ -193,7 +193,7 @@ export async function updateRenewal(id: string, newAmount: string) {
     lastGeneratedDate: successor.lastGeneratedDate ?? undefined,
   })
 
-  revalidatePath('/dashboard')
+  revalidatePath('/expenses')
   revalidatePath('/recurring')
 }
 
