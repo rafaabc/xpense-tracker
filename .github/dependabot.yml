@@ -23,6 +23,27 @@ updates:
       - dependency-name: 'eslint'
         update-types: ['version-update:semver-major']
     groups:
+      # Security-update PRs bypass version-update groups, so without these they
+      # arrive one-per-package and each re-runs CI on a conflicting lockfile.
+      production-security:
+        applies-to: security-updates
+        dependency-type: 'production'
+        patterns:
+          - '*'
+      development-security:
+        applies-to: security-updates
+        dependency-type: 'development'
+        patterns:
+          - '*'
+      # next and eslint-config-next must move together. Listed before the
+      # prod/dev groups (first match wins) so they don't split across them.
+      next-stack:
+        patterns:
+          - 'next'
+          - 'eslint-config-next'
+        update-types:
+          - 'minor'
+          - 'patch'
       production-dependencies:
         dependency-type: 'production'
         update-types:
