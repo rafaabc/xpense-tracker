@@ -127,7 +127,7 @@ function FeatureCard({ icon, title, body }: FeatureCardProps) {
 
 export default async function LandingPage() {
   const session = await auth();
-  if (session) redirect("/dashboard");
+  if (session) redirect("/expenses");
 
   return (
     <main
@@ -222,7 +222,7 @@ export default async function LandingPage() {
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: "/dashboard" });
+            await signIn("google", { redirectTo: "/expenses" });
           }}
         >
           <button

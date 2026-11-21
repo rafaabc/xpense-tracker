@@ -164,10 +164,8 @@ export default function RecurringManager({ templates, groups, currency }: Props)
         >
           {/* Header */}
           <div
+            className="rec-row rec-header"
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 120px 120px 140px auto',
-              gap: 16,
               padding: '10px 20px',
               borderBottom: '1px solid var(--line)',
               background: 'var(--paper)',
@@ -182,17 +180,15 @@ export default function RecurringManager({ templates, groups, currency }: Props)
           {templates.map((tmpl) => (
             <div
               key={tmpl.id}
+              className="rec-row"
               style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 120px 120px 140px auto',
                 alignItems: 'center',
-                gap: 16,
                 padding: '14px 20px',
                 borderBottom: '1px solid var(--line-soft)',
               }}
             >
               {/* Category */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div className="rec-cat" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span
                   style={{
                     fontFamily: 'var(--font-sans)',
@@ -216,6 +212,7 @@ export default function RecurringManager({ templates, groups, currency }: Props)
 
               {/* Interval */}
               <span
+                className="rec-interval"
                 style={{
                   fontFamily: 'var(--font-sans)',
                   fontSize: 'var(--text-sm)',
@@ -227,12 +224,14 @@ export default function RecurringManager({ templates, groups, currency }: Props)
 
               {/* Amount */}
               <span
+                className="rec-amount"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 'var(--text-sm)',
                   fontWeight: 600,
                   color: 'var(--ink-900)',
                   fontVariantNumeric: 'tabular-nums',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {formatAmount(tmpl.amount, currency)}
@@ -240,25 +239,30 @@ export default function RecurringManager({ templates, groups, currency }: Props)
 
               {/* Next execution date */}
               <span
+                className="rec-next"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 'var(--text-sm)',
                   color: 'var(--ink-500)',
                   fontVariantNumeric: 'tabular-nums',
+                  whiteSpace: 'nowrap',
                 }}
               >
+                <span className="rec-mobile-only">Next on </span>
                 {tmpl.nextExecutionDate}
               </span>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div className="rec-actions" style={{ display: 'flex', gap: 4 }}>
                 <button
+                  className="rec-btn"
                   style={btnGhost}
                   onClick={() => setEditState({ kind: 'edit', template: tmpl })}
                 >
                   Edit
                 </button>
                 <button
+                  className="rec-btn"
                   style={btnDanger}
                   onClick={() =>
                     setDeleteState({

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import RecurringManager from '@/components/recurring/RecurringManager'
 import type { RecurringTemplateRow } from '@/lib/types'
 
@@ -78,5 +78,24 @@ describe('RecurringManager', () => {
   it('TC-08-06: row displays next execution date', () => {
     render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
     expect(screen.getByText('2026-07-15')).toBeInTheDocument()
+  })
+
+  it('row has Edit and Delete buttons', () => {
+    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('Edit opens the form prefilled with the current amount', () => {
+    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    expect(screen.getByText(/edit recurring expense/i)).toBeInTheDocument()
+    expect(screen.getByDisplayValue('500.00')).toBeInTheDocument()
+  })
+
+  it('Delete opens the confirm modal', () => {
+    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(screen.getByText(/delete recurring expense/i)).toBeInTheDocument()
   })
 })

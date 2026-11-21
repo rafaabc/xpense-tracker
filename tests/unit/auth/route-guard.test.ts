@@ -21,7 +21,7 @@ describe('TC-02-09: Route guard — unauthenticated redirect', () => {
   })
 
   it('redirects unauthenticated user on protected route', () => {
-    const res = proxy(makeReq('/dashboard', false))
+    const res = proxy(makeReq('/expenses', false))
     expect(res).toBeInstanceOf(Response)
     expect(res!.status).toBe(302)
   })
@@ -36,7 +36,7 @@ describe('TC-02-09: Route guard — unauthenticated redirect', () => {
   })
 
   it('allows authenticated user on protected route', () => {
-    expect(proxy(makeReq('/dashboard', true))).toBeUndefined()
+    expect(proxy(makeReq('/expenses', true))).toBeUndefined()
   })
 
   it('redirects any unauthed nested path', () => {
