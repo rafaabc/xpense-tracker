@@ -5,15 +5,83 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Weekly audit, so advisories disclosed during a quiet week still surface.
+    - cron: '0 6 * * 1'
 
-# Cancel in-progress runs on the same ref — no point running stale pushes.
+permissions:
+  contents: read
+
+# A new push to a PR cancels its superseded run. Every other run gets its own
+# group, so runs on main are never cancelled (not even while pending).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  lint:
+  # Detects docs-only changes. This is a job-level skip, NOT `paths-ignore`:
+  # lint, test and e2e are required checks, and a workflow that never runs
+  # leaves the PR unmergeable. A skipped job satisfies its required check.
+  changes:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: filter
+        name: Detect whether any non-docs file changed
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          DOCS_PATTERN='(^|/)[^/]+\.md$|^docs/|^LICENSE$'
+          code=true
+          if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            if [ "$EVENT_NAME" = "pull_request" ]; then
+              changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+            else
+              changed="$(git diff --name-only "$BASE_SHA" HEAD)"
+            fi
+            echo "$changed"
+            if [ -n "$changed" ] && ! echo "$changed" | grep -qvE "$DOCS_PATTERN"; then
+              code=false
+            fi
+          fi
+          echo "code=$code" | tee -a "$GITHUB_OUTPUT"
+
+  # Not a required check yet.
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # Reads the lockfile only, so no `npm ci`. The retry covers transient
+      # errors from the npm audit endpoint.
+      - name: Audit production dependencies
+        run: |
+          for attempt in 1 2 3 4; do
+            if npm audit --package-lock-only --omit=dev --audit-level=high; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 4 ]; then
+              echo "Attempt $attempt failed, retrying in $((attempt * 15))s..."
+              sleep $((attempt * 15))
+            fi
+          done
+          exit 1
+
+  lint:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -24,7 +92,12 @@ jobs:
       - run: npm run lint
 
   test:
+    needs: changes
+    # `!= 'false'`: if `changes` itself fails, run the tests instead of
+    # skipping them (a skipped required check would let the PR merge).
+    if: ${{ !cancelled() && github.event_name != 'schedule' && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -42,12 +115,18 @@ jobs:
           if-no-files-found: ignore
 
   e2e:
-    needs: [lint, test]
+    needs: [changes, lint, test]
     # Dependabot PRs run with Dependabot secrets, not Actions secrets, so
     # NEON_API_KEY etc. are empty and this job can never pass on them.
     # lint + test still gate dependency bumps; e2e runs on human PRs and main.
-    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    if: >-
+      ${{ !cancelled() &&
+      needs.lint.result == 'success' &&
+      needs.test.result == 'success' &&
+      needs.changes.outputs.code != 'false' &&
+      github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Auth secrets available to all steps; DATABASE_URL is injected via .env.local
     # after the Neon branch is created (see "Write .env.local" step).
     env:
