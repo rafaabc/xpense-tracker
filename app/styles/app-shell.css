@@ -24,6 +24,13 @@
   display: none;
 }
 
+/* Expense list: same table-to-card behaviour */
+.exp-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 16px;
+}
+
 @media (max-width: 767px) {
   .app-nav-top {
     display: none;
@@ -61,6 +68,28 @@
   }
 
   .rec-btn {
+    min-height: 44px;
+  }
+
+  .exp-header {
+    display: none;
+  }
+
+  .exp-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "cat amount"
+      "date date"
+      "actions actions";
+    row-gap: 8px;
+  }
+
+  .exp-cat { grid-area: cat; min-width: 0; }
+  .exp-amount { grid-area: amount; text-align: right; }
+  .exp-date { grid-area: date; }
+  .exp-actions { grid-area: actions; }
+
+  .exp-btn {
     min-height: 44px;
   }
 }

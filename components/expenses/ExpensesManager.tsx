@@ -4,12 +4,13 @@ import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createExpense, updateExpense, deleteExpense } from '@/app/actions/expenses'
-import type { ExpenseRow } from '@/lib/types'
+import type { ExpenseRow, PersonRow } from '@/lib/types'
 import { formatAmount } from '@/lib/format'
 import type { Currency } from '@/lib/validations/currency'
-import ExpenseForm from '@/components/expenses/ExpenseForm'
+import ExpenseForm, { type ExpenseFormValues } from '@/components/expenses/ExpenseForm'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 import { useToast } from '@/components/shared/Toast'
+import { unwrap } from '@/lib/action-result'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }
@@ -24,6 +25,7 @@ interface PaginationInfo {
 interface Props {
   expenses: ExpenseRow[]
   groups: GroupOption[]
+  people: PersonRow[]
   currency: Currency
   pagination: PaginationInfo
 }
@@ -31,7 +33,7 @@ interface Props {
 type EditState = { kind: 'create' } | { kind: 'edit'; expense: ExpenseRow } | null
 type DeleteState = { id: string; formatted: string } | null
 
-export default function ExpensesManager({ expenses, groups, currency, pagination }: Props) {
+export default function ExpensesManager({ expenses, groups, people, currency, pagination }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
@@ -41,9 +43,15 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
 
   function refresh() { router.refresh() }
 
-  async function handleCreate(payload: { amount: string; subcategoryId: string; date: string }) {
+  // A missing payer (legacy or recurring row) means the user paid
+  function payerName(expense: ExpenseRow) {
+    const payer = people.find((p) => (expense.payerPersonId ? p.id === expense.payerPersonId : p.isSelf))
+    return payer?.name
+  }
+
+  async function handleCreate(payload: ExpenseFormValues) {
     try {
-      await createExpense(payload)
+      unwrap(await createExpense(payload))
       setEditState(null)
       refresh()
       toast.success('Expense added')
@@ -52,10 +60,10 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
     }
   }
 
-  async function handleUpdate(payload: { amount: string; subcategoryId: string; date: string }) {
+  async function handleUpdate(payload: ExpenseFormValues) {
     if (editState?.kind !== 'edit') return
     try {
-      await updateExpense(editState.expense.id, payload)
+      unwrap(await updateExpense(editState.expense.id, payload))
       setEditState(null)
       refresh()
       toast.success('Expense updated')
@@ -68,7 +76,7 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
     if (!deleteState) return
     startTransition(async () => {
       try {
-        await deleteExpense(deleteState.id)
+        unwrap(await deleteExpense(deleteState.id))
         setDeleteState(null)
         refresh()
         toast.success('Expense deleted')
@@ -79,11 +87,9 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
     })
   }
 
+  // Column layout lives in app-shell.css (.exp-row) so it can stack on phones
   const rowStyle = {
-    display: 'grid',
-    gridTemplateColumns: '1fr auto auto auto',
     alignItems: 'center',
-    gap: 16,
     padding: '14px 20px',
     borderBottom: '1px solid var(--line-soft)',
   } as const
@@ -194,10 +200,8 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
         >
           {/* Header row */}
           <div
+            className="exp-row exp-header"
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto auto auto',
-              gap: 16,
               padding: '10px 20px',
               borderBottom: '1px solid var(--line)',
               background: 'var(--paper)',
@@ -221,9 +225,9 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
           </div>
 
           {expenses.map((exp) => (
-            <div key={exp.id} style={rowStyle}>
+            <div key={exp.id} className="exp-row" style={rowStyle}>
               {/* Category */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div className="exp-cat" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span
                   style={{
                     fontFamily: 'var(--font-sans)',
@@ -243,10 +247,39 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
                 >
                   {exp.subcategoryName}
                 </span>
+                {people.length > 1 && (
+                  <span
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--ink-500)',
+                    }}
+                  >
+                    <span>{`Paid by ${payerName(exp)}`}</span>
+                    {exp.splitMode === 'split' && (
+                      <span
+                        style={{
+                          padding: '0 8px',
+                          border: '1px solid var(--line)',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--paper)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Split
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
 
               {/* Date */}
               <span
+                className="exp-date"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 'var(--text-sm)',
@@ -259,6 +292,7 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
 
               {/* Amount */}
               <span
+                className="exp-amount"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 'var(--text-sm)',
@@ -272,14 +306,16 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
               </span>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div className="exp-actions" style={{ display: 'flex', gap: 4 }}>
                 <button
+                  className="exp-btn"
                   style={btnGhost}
                   onClick={() => setEditState({ kind: 'edit', expense: exp })}
                 >
                   Edit
                 </button>
                 <button
+                  className="exp-btn"
                   style={btnDanger}
                   onClick={() =>
                     setDeleteState({
@@ -366,6 +402,7 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
       {editState?.kind === 'create' && (
         <ExpenseForm
           groups={groups}
+          people={people}
           onSubmit={handleCreate}
           onCancel={() => setEditState(null)}
         />
@@ -374,6 +411,7 @@ export default function ExpensesManager({ expenses, groups, currency, pagination
       {editState?.kind === 'edit' && (
         <ExpenseForm
           groups={groups}
+          people={people}
           initial={editState.expense}
           onSubmit={handleUpdate}
           onCancel={() => setEditState(null)}

@@ -5,6 +5,7 @@ import { test, expect } from "@playwright/test";
 const protectedRoutes = [
   "/expenses",
   "/recurring",
+  "/balance",
   "/categories",
   "/settings",
   "/groups/123",

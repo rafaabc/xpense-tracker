@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { updateCurrency } from '@/app/actions/currency'
 import { CURRENCIES, type Currency } from '@/lib/validations/currency'
 import { useToast } from '@/components/shared/Toast'
+import { unwrap } from '@/lib/action-result'
 
 const CURRENCY_LABELS: Record<Currency, string> = {
   DKK: 'Danish krone (DKK)',
@@ -22,7 +23,7 @@ export default function CurrencySelector({ current }: Props) {
     const value = e.target.value as Currency
     startTransition(async () => {
       try {
-        await updateCurrency(value)
+        unwrap(await updateCurrency(value))
         toast.success('Currency updated')
       } catch (e) {
         toast.error((e as Error).message)

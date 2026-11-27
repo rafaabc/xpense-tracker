@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { listExpenses } from '@/app/actions/expenses'
 import { getDueRenewals } from '@/app/actions/recurring'
 import { runCatchUp } from '@/lib/recurrence-engine'
+import { ensureSelfPerson, listPeople } from '@/lib/people'
 import RenewalBanner from '@/components/recurring/RenewalBanner'
 import { EXPENSES_PAGE_SIZE } from '@/lib/types'
 import ExpensesManager from '@/components/expenses/ExpensesManager'
@@ -37,8 +38,11 @@ export default async function ExpensesPage({
   const today = new Date().toISOString().slice(0, 10)
   await runCatchUp(userId, today)
 
+  // The expense form needs a payer, so the user's own person must exist
+  await ensureSelfPerson(userId)
+
   // Fetch expenses, groups, currency, due renewals in parallel
-  const [{ rows: expenses, total }, userGroups, [userRecord], dueRenewals] = await Promise.all([
+  const [{ rows: expenses, total }, userGroups, [userRecord], dueRenewals, userPeople] = await Promise.all([
     listExpenses(filters, requestedPage),
     db
       .select({ id: groups.id, name: groups.name })
@@ -50,6 +54,7 @@ export default async function ExpensesPage({
       .from(users)
       .where(eq(users.id, userId)),
     getDueRenewals(),
+    listPeople(userId),
   ])
 
   const groupIds = userGroups.map((g) => g.id)
@@ -315,6 +320,7 @@ export default async function ExpensesPage({
       <ExpensesManager
         expenses={expenses}
         groups={groupsWithSubs}
+        people={userPeople}
         currency={currency}
         pagination={{ page: requestedPage, totalPages, total, pageSize: EXPENSES_PAGE_SIZE }}
       />

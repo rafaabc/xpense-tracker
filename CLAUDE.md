@@ -8,7 +8,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 - **Database:** Neon Postgres (serverless) via `@neondatabase/serverless`
 - **ORM:** Drizzle ORM (`drizzle-orm/neon-http`)
 - **Auth:** Auth.js v5 (`next-auth@beta`) — Google OAuth only, Drizzle adapter
-- **Testing:** Vitest (unit/component/mocked-integration) + Playwright (E2E)
+- **Testing:** Vitest (unit/component/mocked-integration/real-dependency) + Playwright (E2E)
 
 ## Next.js 16 Breaking Change — Proxy
 
@@ -30,14 +30,19 @@ All product requirements live in `docs/`:
 - `docs/1. user_stories_backlog.md` — 13 user stories across 6 epics
 - `docs/2. test_conditions.md` — 132 test conditions mapped from user stories
 - `docs/3. test_pyramid_distribution.md` — Test pyramid: 53 unit / 28 mocked-integration / 11 real-dependency / 16 API / 12 E2E
+- `docs/4. split_expenses_spec.md` — split expenses: US-16 to US-21, business rules, test conditions, open questions
+- `docs/5. split_expenses_plan.md` — split expenses slices and status
+
+`docs/` is gitignored (local only).
 
 ## Domain Model
 
 - **User** — authenticated via Google OAuth only; owns all data
 - **Group** — top-level expense category; unique per user (case-insensitive)
 - **Subcategory** — nested under exactly one Group; unique within parent Group (case-insensitive); parent cannot change after creation
-- **Expense** — Amount (`numeric(12,2)` > 0.00, ≤2dp), Subcategory, Date (no future dates)
-- **RecurringTemplate** — Amount, Subcategory, StartDate, Interval (monthly/6mo/12mo), dayOfMonth; edits are future-only
+- **Person** — someone the user shares costs with; exactly one per user is the user (`isSelf`, cannot be deleted); unique per user (case-insensitive); holds the default split
+- **Expense** — Amount (`numeric(12,2)` > 0.00, ≤2dp, max 9999999999.99), Subcategory, Date (no future dates), payer, split mode (`personal` / `split`) with a snapshot of shares
+- **RecurringTemplate** — Amount, Subcategory, StartDate, Interval (monthly/6mo/12mo), dayOfMonth, payer and split (copied to generated expenses); edits are future-only unless the user opts to apply payer/split to the current month
 - **Currency preference** — display-only (DKK or BRL, default DKK); never mutates stored values
 
 Cascade rules: deleting a Group hard-deletes all its Subcategories and their Expenses. Deleting a Subcategory hard-deletes its Expenses. Enforced via FK `onDelete: 'cascade'` in `lib/schema.ts`.
@@ -49,6 +54,18 @@ Cascade rules: deleting a Group hard-deletes all its Subcategories and their Exp
 - Annual average: ÷12 for completed years, ÷elapsed months for current year
 - Recurring day-of-month overflow → last day of that month
 - Currency change never converts stored values
+- Percentages are integer basis points (10000 = 100%); share amounts use integer cents with largest-remainder rounding (ties: payer first, then oldest person) and always add up to the amount
+- A `null` payer (legacy rows) means the user paid
+- New expenses and templates default to `split` once there are two people
+- Balance is per month, without carry-over; personal expenses do not affect it; transfers are matched greedily
+- Summaries show full amounts, not the user's share
+- A person referenced by an expense or template cannot be deleted
+
+## Server Actions — Errors
+
+A production build hides the message of anything a Server Action throws. Mutations therefore wrap their body in `guard()` and throw `ActionError` (`lib/action-result.ts`), which returns `{ error }`; client components call `unwrap(await action(...))`. Use `rejectDuplicate` for writes that can hit a unique index. Query functions used during RSC render still throw.
+
+neon-http has no interactive transactions: use `db.batch([...])` for writes that must be atomic, generating ids with `crypto.randomUUID()` beforehand.
 
 ## Architecture — What We Don't Build
 
@@ -63,9 +80,9 @@ Test pyramid is the acceptance skeleton (see `docs/3. test_pyramid_distribution.
 Tests are written **per vertical slice** as each user story is implemented — not upfront.
 
 - Unit + component + mocked-integration: Vitest (`npm run test`)
-- Real-dependency + API-contract: Vitest against an ephemeral Neon branch DB
+- Real-dependency: `npm run test:real` (`tests/real/`, `vitest.real.config.ts`). Writes to the database in `.env.local`, so it must point to a non-production branch. Not run in CI
 - E2E: Playwright (`npm run test:e2e`)
-- Coverage target: 95% via `@vitest/coverage-v8` (`npm run test:coverage`) — installed, lib/ files tracked at 100% in HTML report (terminal reporter skips them; this is a vitest display quirk, not a coverage gap)
+- Coverage target: 95% via `@vitest/coverage-v8` (`npm run test:coverage`). Statements, lines and functions meet it; branches are at about 90%
 
 ## Design System
 
@@ -93,6 +110,7 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 | 4 — Summaries | US-14, US-15 | ✅ complete |
 | 5 — Recurrence | US-08, US-09 | ✅ complete |
 | 6 — Test Coverage | — | ✅ complete — closed 22 TC-ID gaps; added E2E fixtures + create/monthly tests, cron + engine + expenses mocked-integration, currency/recurring/summaries unit tests (PR #6) |
+| 7 — Split expenses | US-16 to US-21 | code complete — see `docs/5. split_expenses_plan.md` |
 
 ## Shared Utilities (built in Slice 3)
 
@@ -115,6 +133,18 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 - Cron bearer guard: `CRON_SECRET` env var must be set in `.env.local`; Vercel injects it automatically in production
 - Idempotency: `lastGeneratedDate` column on `recurringTemplates` — generation emits only dates strictly after this marker
 
+## Shared Utilities (split expenses)
+
+- `lib/split.ts` — `allocateShares`, `toCents`, `fromCents`, `SPLIT_MODES`
+- `lib/split-input.ts` — `parseSplit`, `resolveShares` (ownership check); used by expense and template actions
+- `lib/settlement.ts` — `calcBalances`, `calcTransfers`
+- `lib/people.ts` — `ensureSelfPerson`, `listPeople`; not a Server Action because it takes a `userId`
+- `lib/template-shares.ts` — `loadTemplateShares`
+- `components/shared/SplitFields.tsx` — `useSplitFields` + payer/split controls for both forms
+- `app/actions/balance.ts` — `getMonthlyBalance`; the balance page runs `runCatchUp` first
+- `scripts/backfill-self-person.mjs` (`npm run db:backfill`) — idempotent: self person, payer on old rows, links generated expenses to templates
+- Person foreign keys use `onDelete: 'no action'` so deleting a user can still cascade
+
 ## E2E Test Infrastructure
 
 `playwright.config.ts` loads `.env.local` via `dotenv` and sets `NODE_OPTIONS=--use-system-ca`.
@@ -125,9 +155,13 @@ Brand summary: emerald green + warm paper neutrals, Space Grotesk display / Hank
 
 ## Local Setup
 
-Fill in `.env.local` per the instructions at the top of that file, then:
+Vercel is the source of truth for env vars (the Development environment points to the Neon `dev` branch):
 
 ```bash
+vercel link
+vercel env pull .env.local
 npm run db:push   # apply schema to Neon DB
 npm run dev       # start dev server
 ```
+
+There is no migrations folder. Before merging or deploying a schema change, run `db:push` (and `db:backfill` when needed) against production, only with the owner's approval. CI E2E clones a parent Neon branch, which needs the schema too.

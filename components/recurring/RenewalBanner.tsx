@@ -9,6 +9,7 @@ import { formatAmount } from '@/lib/format'
 import { INTERVALS } from '@/lib/recurrence'
 import type { Currency } from '@/lib/validations/currency'
 import { useToast } from '@/components/shared/Toast'
+import { unwrap } from '@/lib/action-result'
 
 interface Props {
   template: RecurringTemplateRow
@@ -29,7 +30,7 @@ export default function RenewalBanner({ template, currency }: Props) {
   function handleConfirm() {
     startTransition(async () => {
       try {
-        await confirmRenewal(template.id)
+        unwrap(await confirmRenewal(template.id))
         router.refresh()
         setDismissed(true)
         toast.success('Renewal confirmed')
@@ -47,7 +48,7 @@ export default function RenewalBanner({ template, currency }: Props) {
 
     startTransition(async () => {
       try {
-        await updateRenewal(template.id, newAmount.trim())
+        unwrap(await updateRenewal(template.id, newAmount.trim()))
         router.refresh()
         setDismissed(true)
         toast.success('Renewal updated')

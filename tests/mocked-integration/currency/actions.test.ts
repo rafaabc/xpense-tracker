@@ -55,13 +55,13 @@ describe('updateCurrency Server Action', () => {
 
   it('TC-05-02: throws for invalid currency without hitting DB', async () => {
     const { updateCurrency } = await import('@/app/actions/currency')
-    await expect(updateCurrency('USD')).rejects.toThrow()
+    await expect(updateCurrency('USD')).resolves.toHaveProperty('error')
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   it('TC-05-02: throws for empty string without hitting DB', async () => {
     const { updateCurrency } = await import('@/app/actions/currency')
-    await expect(updateCurrency('')).rejects.toThrow()
+    await expect(updateCurrency('')).resolves.toHaveProperty('error')
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 })

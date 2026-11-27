@@ -76,13 +76,13 @@ describe('createSubcategory Server Action', () => {
 
   it('TC-07-02: throws without hitting DB when groupId is empty', async () => {
     const { createSubcategory } = await import('@/app/actions/subcategories')
-    await expect(createSubcategory('Rent', '')).rejects.toThrow()
+    await expect(createSubcategory('Rent', '')).resolves.toHaveProperty('error')
     expect(mockInsert).not.toHaveBeenCalled()
   })
 
   it('throws without hitting DB when name is empty', async () => {
     const { createSubcategory } = await import('@/app/actions/subcategories')
-    await expect(createSubcategory('', 'g-1')).rejects.toThrow()
+    await expect(createSubcategory('', 'g-1')).resolves.toHaveProperty('error')
     expect(mockInsert).not.toHaveBeenCalled()
   })
 })
@@ -106,7 +106,7 @@ describe('renameSubcategory Server Action', () => {
 
   it('throws without hitting DB when name is empty', async () => {
     const { renameSubcategory } = await import('@/app/actions/subcategories')
-    await expect(renameSubcategory('sub-1', '')).rejects.toThrow()
+    await expect(renameSubcategory('sub-1', '')).resolves.toHaveProperty('error')
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 })

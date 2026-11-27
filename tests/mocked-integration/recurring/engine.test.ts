@@ -11,12 +11,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const mockInsert = vi.fn()
 const mockUpdate = vi.fn()
 const mockSelect = vi.fn()
+const mockBatch = vi.fn()
 
 vi.mock('@/lib/db', () => ({
   db: {
     select: mockSelect,
     insert: mockInsert,
     update: mockUpdate,
+    batch: mockBatch,
   },
 }))
 

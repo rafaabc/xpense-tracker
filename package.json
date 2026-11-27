@@ -9,9 +9,11 @@
     "lint": "eslint",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:real": "dotenv -e .env.local -- node --use-system-ca node_modules/vitest/vitest.mjs run --config vitest.real.config.ts",
     "test:e2e": "dotenv -e .env.local -e .env.e2e -- playwright test",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
-    "db:studio": "dotenv -e .env.local -- drizzle-kit studio"
+    "db:backfill": "dotenv -e .env.local -- node --use-system-ca scripts/backfill-self-person.mjs",
+    "db:studio":"dotenv -e .env.local -- drizzle-kit studio"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",

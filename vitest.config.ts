@@ -8,7 +8,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
-    exclude: ["node_modules", ".next", "tests/e2e/**"],
+    exclude: ["node_modules", ".next", "tests/e2e/**", "tests/real/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
@@ -17,6 +17,7 @@ export default defineConfig({
         ".next",
         "drizzle",
         "tests",
+        "scripts",
         "lib/schema.ts",
         "lib/db.ts",
         "lib/auth.ts",

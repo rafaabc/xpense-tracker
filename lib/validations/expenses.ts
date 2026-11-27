@@ -3,6 +3,10 @@ type AmountResult = { ok: true; value: string } | { ok: false; error: string }
 
 const AMOUNT_ERROR = 'Amount must be a positive number with up to 2 decimal places (e.g. 361.61 or 361,61)'
 
+// numeric(12,2) holds up to 10 integer digits
+const MAX_INTEGER_DIGITS = 10
+const MAX_AMOUNT = '9999999999.99'
+
 /**
  * Accepts either `.` or `,` as the decimal separator (DKK/BRL keyboards emit
  * a comma for `inputMode="decimal"`) and normalizes to a dot. Returns null
@@ -53,6 +57,10 @@ export function validateAmount(input: string): AmountResult {
 
   if (parseFloat(normalized) <= 0) {
     return { ok: false, error: 'Amount must be greater than 0.00' }
+  }
+
+  if (normalized.split('.')[0].replace(/^0+/, '').length > MAX_INTEGER_DIGITS) {
+    return { ok: false, error: `Amount must be ${MAX_AMOUNT} or less` }
   }
 
   return { ok: true, value: normalized }

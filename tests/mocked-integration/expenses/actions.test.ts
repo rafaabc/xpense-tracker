@@ -16,6 +16,7 @@ const mockInsert = vi.fn()
 const mockUpdate = vi.fn()
 const mockDelete = vi.fn()
 const mockSelect = vi.fn()
+const mockBatch = vi.fn()
 
 const chainable = {
   values: vi.fn().mockReturnThis(),
@@ -38,6 +39,7 @@ vi.mock('@/lib/db', () => ({
     update: mockUpdate,
     delete: mockDelete,
     select: mockSelect,
+    batch: mockBatch,
   },
 }))
 
@@ -49,6 +51,8 @@ vi.mock('@/lib/schema', () => ({
   expenses: { id: 'id', userId: 'user_id', subcategoryId: 'subcategory_id', amount: 'amount', date: 'date', __tableName: 'expense' },
   subcategories: { id: 'id', groupId: 'group_id', __tableName: 'subcategory' },
   groups: { id: 'id', userId: 'user_id', __tableName: 'group' },
+  expenseShares: { expenseId: 'expense_id', __tableName: 'expense_share' },
+  people: { id: 'id', userId: 'user_id', createdAt: 'created_at' },
 }))
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
@@ -59,19 +63,28 @@ vi.mock('drizzle-orm', () => ({
   gte: (col: unknown, val: unknown) => ({ gte: { col, val } }),
   lte: (col: unknown, val: unknown) => ({ lte: { col, val } }),
   desc: (col: unknown) => ({ desc: col }),
+  asc: (col: unknown) => ({ asc: col }),
+  inArray: (col: unknown, val: unknown) => ({ inArray: { col, val } }),
   sql: vi.fn(),
 }))
+
+// Resolves like a query and also supports a trailing .orderBy()
+function ownedRows() {
+  const rows = [{ id: 'exp-1', userId: 'user-1' }, { id: 'p-self' }]
+  return Object.assign(Promise.resolve(rows), { orderBy: () => Promise.resolve(rows) })
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
   mockInsert.mockReturnValue({ ...chainable, values: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'exp-1' }]) }) })
   mockUpdate.mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }) })
   mockDelete.mockReturnValue({ where: vi.fn().mockResolvedValue([]) })
-  // select returns the expense owned by user-1 by default
+  mockBatch.mockResolvedValue([[{ id: 'exp-1' }]])
+  // select returns the expense owned by user-1 by default (also used as the people list)
   mockSelect.mockReturnValue({
     from: vi.fn().mockReturnThis(),
     innerJoin: vi.fn().mockReturnThis(),
-    where: vi.fn().mockResolvedValue([{ id: 'exp-1', userId: 'user-1' }]),
+    where: vi.fn().mockImplementation(ownedRows),
     orderBy: vi.fn().mockResolvedValue([{ id: 'exp-1' }]),
   })
 })
@@ -80,7 +93,7 @@ beforeEach(() => {
 describe('createExpense', () => {
   it('TC-10-12: calls db.insert on the expenses table', async () => {
     const { createExpense } = await import('@/app/actions/expenses')
-    await createExpense({ amount: '25.50', subcategoryId: 'sub-1', date: '2026-06-10' })
+    await createExpense({ amount: '25.50', subcategoryId: 'sub-1', date: '2026-06-10', payerPersonId: 'p-self', splitMode: 'personal' })
     expect(mockInsert).toHaveBeenCalledOnce()
     const tableArg = mockInsert.mock.calls[0][0]
     expect((tableArg as { __tableName: string }).__tableName).toBe('expense')
@@ -88,14 +101,14 @@ describe('createExpense', () => {
 
   it('TC-10-11: throws validation error for invalid amount', async () => {
     const { createExpense } = await import('@/app/actions/expenses')
-    await expect(createExpense({ amount: '0', subcategoryId: 'sub-1', date: '2026-06-10' }))
-      .rejects.toThrow()
+    await expect(createExpense({ amount: '0', subcategoryId: 'sub-1', date: '2026-06-10', payerPersonId: 'p-self', splitMode: 'personal' }))
+      .resolves.toHaveProperty('error')
   })
 
   it('TC-10-04 (action): throws for future date', async () => {
     const { createExpense } = await import('@/app/actions/expenses')
-    await expect(createExpense({ amount: '10.00', subcategoryId: 'sub-1', date: '2099-01-01' }))
-      .rejects.toThrow()
+    await expect(createExpense({ amount: '10.00', subcategoryId: 'sub-1', date: '2099-01-01', payerPersonId: 'p-self', splitMode: 'personal' }))
+      .resolves.toHaveProperty('error')
   })
 
   it('normalizes a comma decimal separator to dot before persisting (361,61 -> 361.61)', async () => {
@@ -103,7 +116,7 @@ describe('createExpense', () => {
     mockInsert.mockReturnValue({ values: valuesSpy })
 
     const { createExpense } = await import('@/app/actions/expenses')
-    await createExpense({ amount: '361,61', subcategoryId: 'sub-1', date: '2026-06-10' })
+    await createExpense({ amount: '361,61', subcategoryId: 'sub-1', date: '2026-06-10', payerPersonId: 'p-self', splitMode: 'personal' })
 
     expect(valuesSpy).toHaveBeenCalledWith(expect.objectContaining({ amount: '361.61' }))
   })
@@ -113,7 +126,8 @@ describe('createExpense', () => {
 describe('updateExpense', () => {
   it('TC-12-04/05: calls db.update (not db.insert) with existing record id', async () => {
     const { updateExpense } = await import('@/app/actions/expenses')
-    await updateExpense('exp-1', { amount: '30.00', subcategoryId: 'sub-1', date: '2026-06-01' })
+    await updateExpense('exp-1', { amount: '30.00', subcategoryId: 'sub-1', date: '2026-06-01', payerPersonId: 'p-self', splitMode: 'personal' })
+    expect(mockBatch).toHaveBeenCalledOnce()
     expect(mockUpdate).toHaveBeenCalledOnce()
     expect(mockInsert).not.toHaveBeenCalled()
   })
@@ -127,8 +141,8 @@ describe('updateExpense', () => {
       orderBy: vi.fn().mockResolvedValue([]),
     })
     const { updateExpense } = await import('@/app/actions/expenses')
-    await expect(updateExpense('exp-other', { amount: '30.00', subcategoryId: 'sub-1', date: '2026-06-01' }))
-      .rejects.toThrow()
+    await expect(updateExpense('exp-other', { amount: '30.00', subcategoryId: 'sub-1', date: '2026-06-01', payerPersonId: 'p-self', splitMode: 'personal' }))
+      .resolves.toHaveProperty('error')
   })
 })
 
@@ -154,7 +168,7 @@ describe('deleteExpense', () => {
       orderBy: vi.fn().mockResolvedValue([]),
     })
     const { deleteExpense } = await import('@/app/actions/expenses')
-    await expect(deleteExpense('exp-other')).rejects.toThrow()
+    await expect(deleteExpense('exp-other')).resolves.toHaveProperty('error')
   })
 })
 
@@ -252,13 +266,13 @@ describe('listExpenses', () => {
   })
 
   it('returns { rows, total } with total from count query', async () => {
-    const fakeRows = [{ id: 'exp-1' }]
+    const fakeRows = [{ id: 'exp-1', splitMode: 'personal' }]
     makePaginatedChains(fakeRows, 42)
 
     const { listExpenses } = await import('@/app/actions/expenses')
     const result = await listExpenses({})
 
-    expect(result).toEqual({ rows: fakeRows, total: 42 })
+    expect(result).toEqual({ rows: [{ ...fakeRows[0], shares: [] }], total: 42 })
   })
 
   it('defaults to page 1 (offset 0) when no page specified', async () => {

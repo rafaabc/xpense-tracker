@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { validateAmount, validateExpenseDate } from '@/lib/validations/expenses'
+import SplitFields, { useSplitFields, type SplitValues } from '@/components/shared/SplitFields'
+import type { SplitMode } from '@/lib/split'
+import type { PersonRow } from '@/lib/types'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }
@@ -11,23 +14,35 @@ interface InitialValues {
   amount: string
   subcategoryId: string
   date: string
+  payerPersonId: string | null
+  splitMode: SplitMode
+  shares: { personId: string; shareBps: number }[]
+}
+
+export interface ExpenseFormValues extends SplitValues {
+  amount: string
+  subcategoryId: string
+  date: string
 }
 
 interface Props {
   groups: GroupOption[]
-  initial?: InitialValues
-  onSubmit: (payload: { amount: string; subcategoryId: string; date: string }) => Promise<void>
+  /** The user's people; payer and split controls appear once there are two */
+  people: PersonRow[]
+  initial?: Omit<InitialValues, 'payerPersonId' | 'splitMode' | 'shares'> & Partial<InitialValues>
+  onSubmit: (payload: ExpenseFormValues) => Promise<void>
   onCancel: () => void
 }
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
-export default function ExpenseForm({ groups, initial, onSubmit, onCancel }: Props) {
+export default function ExpenseForm({ groups, people, initial, onSubmit, onCancel }: Props) {
   const [amount, setAmount] = useState(initial?.amount ?? '')
   const [subcategoryId, setSubcategoryId] = useState(initial?.subcategoryId ?? '')
   const [date, setDate] = useState(initial?.date ?? TODAY)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const split = useSplitFields(people, initial)
 
   async function handleSubmit() {
     setError(null)
@@ -40,9 +55,19 @@ export default function ExpenseForm({ groups, initial, onSubmit, onCancel }: Pro
 
     if (!subcategoryId) { setError('Subcategory is required'); return }
 
+    const splitValues = split.read()
+    if (!splitValues.ok) { setError(splitValues.error); return }
+
+    const values: ExpenseFormValues = {
+      amount: amount.trim(),
+      subcategoryId,
+      date,
+      ...splitValues.value,
+    }
+
     setSubmitting(true)
     try {
-      await onSubmit({ amount: amount.trim(), subcategoryId, date })
+      await onSubmit(values)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -98,6 +123,8 @@ export default function ExpenseForm({ groups, initial, onSubmit, onCancel }: Pro
           width: '100%',
           maxWidth: 440,
           padding: '28px 24px 24px',
+          maxHeight: 'calc(100dvh - 32px)',
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: 20,
@@ -115,22 +142,6 @@ export default function ExpenseForm({ groups, initial, onSubmit, onCancel }: Pro
         >
           {initial ? 'Edit expense' : 'Add expense'}
         </h2>
-
-        {error && (
-          <div
-            role="alert"
-            style={{
-              background: 'var(--negative-50)',
-              borderRadius: 'var(--radius-md)',
-              padding: '10px 14px',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 'var(--text-sm)',
-              color: 'var(--negative-700)',
-            }}
-          >
-            {error}
-          </div>
-        )}
 
         {/* Amount */}
         <div>
@@ -193,6 +204,25 @@ export default function ExpenseForm({ groups, initial, onSubmit, onCancel }: Pro
             style={inputStyle}
           />
         </div>
+
+        <SplitFields split={split} idPrefix="expense" labelStyle={labelStyle} inputStyle={inputStyle} />
+
+        {/* Error sits next to Save so it is visible when the dialog is scrolled */}
+        {error && (
+          <div
+            role="alert"
+            style={{
+              background: 'var(--negative-50)',
+              borderRadius: 'var(--radius-md)',
+              padding: '10px 14px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--negative-700)',
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
