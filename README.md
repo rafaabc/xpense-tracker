@@ -2,7 +2,7 @@
 
 # xpense-tracker
 
-As a QA, I have created a personal expense tracking app to practice the testing and quality knowledge, assisted by AI. Groups and subcategories, recurring templates, monthly/annual summaries, multi-currency display are available features.
+As a QA, I have created a personal expense tracking app to practice the testing and quality knowledge, assisted by AI. Groups and subcategories, recurring templates, split expenses with a monthly balance (who owes whom), monthly/annual summaries and multi-currency display are available features.
 
 **Live:** https://xpense-tracker-xi.vercel.app/
 
@@ -13,17 +13,23 @@ As a QA, I have created a personal expense tracking app to practice the testing 
 - **Drizzle ORM** (`drizzle-orm/neon-http`)
 - **Auth.js v5** — Google OAuth only
 - **Vercel** for deployment + cron (daily recurring expense generation)
-- **Vitest** (unit / mocked-integration) + **Playwright** (E2E)
+- **Vitest** (unit / mocked-integration / real-dependency) + **Playwright** (E2E)
+
+## Splitting expenses
+
+1. In **Settings**, add the people you share costs with and set the default split.
+2. On each expense or recurring expense, choose who paid and whether it is split.
+3. Open **Balance** and pick a month to see who pays whom.
 
 ## Local setup
 
-1. Copy `.env.local.example` → `.env.local` and fill in:
+1. Create `.env.local` (for example with `vercel env pull .env.local`) containing:
    - `DATABASE_URL` — Neon connection string
    - `AUTH_SECRET` — random secret (`openssl rand -base64 32`)
    - `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` — Google OAuth credentials
    - `CRON_SECRET` — secret for the recurring-expense cron endpoint
 
-2. Push schema and start dev server:
+2. Push schema and start dev server (run `npm run db:backfill` once if the database already has data):
 
 ```bash
 npm run db:push   # apply schema to Neon DB
@@ -35,6 +41,7 @@ npm run dev       # http://localhost:3000
 ```bash
 npm run test            # unit + mocked-integration (watch)
 npm run test:coverage   # coverage report
+npm run test:real       # real-dependency tests (writes to the .env.local database; never production)
 npm run test:e2e        # Playwright E2E (requires dev server or starts one)
 npm run lint            # ESLint
 ```

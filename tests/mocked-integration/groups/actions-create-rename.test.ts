@@ -64,13 +64,13 @@ describe('createGroup Server Action', () => {
 
   it('TC-06-03: throws without hitting DB when name is empty', async () => {
     const { createGroup } = await import('@/app/actions/groups')
-    await expect(createGroup('')).rejects.toThrow()
+    await expect(createGroup('')).resolves.toHaveProperty('error')
     expect(mockInsert).not.toHaveBeenCalled()
   })
 
   it('TC-06-04: throws without hitting DB when name is whitespace only', async () => {
     const { createGroup } = await import('@/app/actions/groups')
-    await expect(createGroup('   ')).rejects.toThrow()
+    await expect(createGroup('   ')).resolves.toHaveProperty('error')
     expect(mockInsert).not.toHaveBeenCalled()
   })
 })
@@ -102,7 +102,7 @@ describe('renameGroup Server Action', () => {
 
   it('throws without hitting DB when new name is empty', async () => {
     const { renameGroup } = await import('@/app/actions/groups')
-    await expect(renameGroup('g-1', '')).rejects.toThrow()
+    await expect(renameGroup('g-1', '')).resolves.toHaveProperty('error')
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 })

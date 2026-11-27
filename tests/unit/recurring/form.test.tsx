@@ -10,11 +10,14 @@ const groups = [
   },
 ]
 
+const people = [{ id: 'p-self', name: 'Rafa', isSelf: true, defaultShareBps: 10000 }]
+
 describe('RecurringForm', () => {
   it('renders all required fields (TC-08-01)', () => {
     render(
       <RecurringForm
         groups={groups}
+        people={people}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -31,6 +34,7 @@ describe('RecurringForm', () => {
     render(
       <RecurringForm
         groups={groups}
+        people={people}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -47,6 +51,7 @@ describe('RecurringForm', () => {
     render(
       <RecurringForm
         groups={groups}
+        people={people}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -61,6 +66,7 @@ describe('RecurringForm', () => {
     render(
       <RecurringForm
         groups={groups}
+        people={people}
         onSubmit={vi.fn()}
         onCancel={onCancel}
       />
@@ -74,6 +80,7 @@ describe('RecurringForm', () => {
     render(
       <RecurringForm
         groups={groups}
+        people={people}
         initial={{
           id: 'tmpl-1',
           amount: '500.00',

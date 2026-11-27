@@ -117,3 +117,13 @@ describe('validateAmount', () => {
     expect(validateAmount('12.3.456,61').ok).toBe(false)
   })
 })
+
+describe('validateAmount maximum (numeric(12,2))', () => {
+  it.each(['9999999999.99', '9.999.999.999,99', '0000000000001'])('accepts %s', (input) => {
+    expect(validateAmount(input).ok).toBe(true)
+  })
+
+  it.each(['10000000000', '10000000000.00', '10.000.000.000,00'])('rejects %s', (input) => {
+    expect(validateAmount(input)).toEqual({ ok: false, error: 'Amount must be 9999999999.99 or less' })
+  })
+})

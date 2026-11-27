@@ -81,6 +81,26 @@ export async function seedRecurringTemplate(
 }
 
 /**
+ * Inserts a person for the given user directly in Neon.
+ * Deleted automatically via FK cascade when deleteTestUser is called.
+ */
+export async function seedPerson(
+  userId: string,
+  name: string,
+  { isSelf = false, defaultShareBps = 0 } = {}
+): Promise<string> {
+  const sql = neon(process.env.DATABASE_URL!);
+  const personId = crypto.randomUUID();
+
+  await sql`
+    INSERT INTO person (id, user_id, name, is_self, default_share_bps, created_at)
+    VALUES (${personId}, ${userId}, ${name}, ${isSelf}, ${defaultShareBps}, NOW())
+  `;
+
+  return personId;
+}
+
+/**
  * Inserts an expense for the given user directly in Neon.
  * Deleted automatically via FK cascade when deleteTestUser is called.
  */

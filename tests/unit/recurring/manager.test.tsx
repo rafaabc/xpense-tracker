@@ -36,7 +36,12 @@ const template: RecurringTemplateRow = {
   lastRenewedAt: null,
   lastGeneratedDate: null,
   nextExecutionDate: '2026-07-15',
+  payerPersonId: null,
+  splitMode: 'personal',
+  shares: [],
 }
+
+const people = [{ id: 'p-self', name: 'Rafa', isSelf: true, defaultShareBps: 10000 }]
 
 const groups = [
   {
@@ -48,53 +53,53 @@ const groups = [
 
 describe('RecurringManager', () => {
   it('TC-08-05: shows empty state when no templates', () => {
-    render(<RecurringManager templates={[]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[]} groups={groups} people={people} currency="DKK" />)
     expect(screen.getByText(/no recurring expenses/i)).toBeInTheDocument()
   })
 
   it('TC-08-05: renders the list when templates are provided', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     // At least the group name visible confirms the list rendered
     expect(screen.getByText('Casa')).toBeInTheDocument()
   })
 
   it('TC-08-06: row displays Group and Subcategory names', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     expect(screen.getByText('Casa')).toBeInTheDocument()
     expect(screen.getByText('Rent')).toBeInTheDocument()
   })
 
   it('TC-08-06: row displays interval label', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     expect(screen.getByText(/monthly/i)).toBeInTheDocument()
   })
 
   it('TC-08-06: row displays formatted amount', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     // formatAmount('500.00', 'DKK') → 'kr 500.00'
     expect(screen.getByText(/500/)).toBeInTheDocument()
   })
 
   it('TC-08-06: row displays next execution date', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     expect(screen.getByText('2026-07-15')).toBeInTheDocument()
   })
 
   it('row has Edit and Delete buttons', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
   })
 
   it('Edit opens the form prefilled with the current amount', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByText(/edit recurring expense/i)).toBeInTheDocument()
     expect(screen.getByDisplayValue('500.00')).toBeInTheDocument()
   })
 
   it('Delete opens the confirm modal', () => {
-    render(<RecurringManager templates={[template]} groups={groups} currency="DKK" />)
+    render(<RecurringManager templates={[template]} groups={groups} people={people} currency="DKK" />)
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(screen.getByText(/delete recurring expense/i)).toBeInTheDocument()
   })

@@ -1,6 +1,8 @@
 // Pure date/interval logic for recurring expense templates.
 // No DB, no session — fully unit-testable.
 
+import type { SplitMode } from '@/lib/split'
+
 export type Interval = 'monthly' | '6mo' | '12mo'
 
 export const INTERVALS: Record<Interval, { label: string; monthCount: number }> = {
@@ -20,6 +22,8 @@ export interface RecurringTemplate {
   active: boolean
   lastRenewedAt: string | null  // YYYY-MM-DD
   lastGeneratedDate: string | null // YYYY-MM-DD
+  payerPersonId?: string | null // null means the user pays
+  splitMode?: SplitMode
 }
 
 export interface SuccessorValues {
@@ -88,6 +92,14 @@ export function occurrencesDue(template: RecurringTemplate, today: string): stri
   }
 
   return results
+}
+
+/** True when `date` is one of the template's scheduled occurrences (TC-21-07). */
+export function isScheduledOccurrence(
+  template: Pick<RecurringTemplate, 'startDate' | 'interval' | 'dayOfMonth'>,
+  date: string
+): boolean {
+  return occurrencesDue({ ...template, lastGeneratedDate: null } as RecurringTemplate, date).includes(date)
 }
 
 /**

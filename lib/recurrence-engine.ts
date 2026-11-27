@@ -2,10 +2,12 @@
 // Imports db directly — no 'use server', no auth() — so cron routes can import without a session.
 
 import { db } from '@/lib/db'
-import { expenses, recurringTemplates } from '@/lib/schema'
+import { expenses, expenseShares, recurringTemplates } from '@/lib/schema'
 import { eq, and } from 'drizzle-orm'
 import { occurrencesDue } from '@/lib/recurrence'
 import type { RecurringTemplate } from '@/lib/recurrence'
+import { allocateShares } from '@/lib/split'
+import { loadTemplateShares } from '@/lib/template-shares'
 
 type TemplateRow = RecurringTemplate
 
@@ -39,21 +41,43 @@ async function _processTemplates(templates: TemplateRow[], today: string): Promi
     const dates = occurrencesDue(tmpl, today)
     if (dates.length === 0) continue
 
+    const splitMode = tmpl.splitMode ?? 'personal'
+    const payerPersonId = tmpl.payerPersonId ?? null
+    const shares = splitMode === 'split' ? await loadTemplateShares(tmpl.id, tmpl.userId) : []
+
     // Bulk-insert all due expense rows
     const rows = dates.map((date) => ({
+      // The id is generated here so the shares can be written in the same batch
+      id: crypto.randomUUID(),
       userId: tmpl.userId,
       subcategoryId: tmpl.subcategoryId,
       amount: tmpl.amount,
       date,
+      recurringTemplateId: tmpl.id,
+      payerPersonId,
+      splitMode,
     }))
 
-    await db.insert(expenses).values(rows)
+    const shareRows = shares.length
+      ? rows.flatMap((row) =>
+          allocateShares(row.amount, shares, payerPersonId ?? '').map((s) => ({
+            expenseId: row.id,
+            personId: s.personId,
+            shareBps: s.bps,
+            amount: s.amount,
+          })),
+        )
+      : []
 
-    // Advance the progress marker to the latest generated date
+    // Expenses, shares and the progress marker are written atomically
     const lastDate = dates[dates.length - 1]
-    await db
-      .update(recurringTemplates)
-      .set({ lastGeneratedDate: lastDate })
-      .where(eq(recurringTemplates.id, tmpl.id))
+    await db.batch([
+      db.insert(expenses).values(rows),
+      ...(shareRows.length ? [db.insert(expenseShares).values(shareRows)] : []),
+      db
+        .update(recurringTemplates)
+        .set({ lastGeneratedDate: lastDate })
+        .where(eq(recurringTemplates.id, tmpl.id)),
+    ])
   }
 }

@@ -12,6 +12,7 @@ import { validateGroupName } from '@/lib/validations/groups'
 import { validateSubcategoryName } from '@/lib/validations/subcategories'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 import { useToast } from '@/components/shared/Toast'
+import { unwrap } from '@/lib/action-result'
 
 interface SubcategoryRow { id: string; name: string }
 interface GroupRow { id: string; name: string; subcategories: SubcategoryRow[] }
@@ -51,7 +52,7 @@ export default function CategoriesManager({ groups }: Props) {
     const check = validateGroupName(newGroupName)
     if (!check.ok) { toast.error(check.error); return }
     try {
-      await createGroup(newGroupName)
+      unwrap(await createGroup(newGroupName))
       setNewGroupName('')
       setAddingGroup(false)
       refresh()
@@ -65,7 +66,7 @@ export default function CategoriesManager({ groups }: Props) {
     const check = validateGroupName(renameGroupValue)
     if (!check.ok) { toast.error(check.error); return }
     try {
-      await renameGroup(id, renameGroupValue)
+      unwrap(await renameGroup(id, renameGroupValue))
       setRenamingGroupId(null)
       refresh()
       toast.success('Group renamed')
@@ -78,7 +79,7 @@ export default function CategoriesManager({ groups }: Props) {
     if (modal?.kind !== 'deleteGroup') return
     startTransition(async () => {
       try {
-        await deleteGroup(modal.id)
+        unwrap(await deleteGroup(modal.id))
         setModal(null)
         refresh()
         toast.success('Group deleted')
@@ -93,7 +94,7 @@ export default function CategoriesManager({ groups }: Props) {
     const check = validateSubcategoryName(newSubName)
     if (!check.ok) { toast.error(check.error); return }
     try {
-      await createSubcategory(newSubName, groupId)
+      unwrap(await createSubcategory(newSubName, groupId))
       setNewSubName('')
       setAddingSubFor(null)
       refresh()
@@ -107,7 +108,7 @@ export default function CategoriesManager({ groups }: Props) {
     const check = validateSubcategoryName(renameSubValue)
     if (!check.ok) { toast.error(check.error); return }
     try {
-      await renameSubcategory(id, renameSubValue)
+      unwrap(await renameSubcategory(id, renameSubValue))
       setRenamingSubId(null)
       refresh()
       toast.success('Subcategory renamed')
@@ -120,7 +121,7 @@ export default function CategoriesManager({ groups }: Props) {
     if (modal?.kind !== 'deleteSubcategory') return
     startTransition(async () => {
       try {
-        await deleteSubcategory(modal.id)
+        unwrap(await deleteSubcategory(modal.id))
         setModal(null)
         refresh()
         toast.success('Subcategory deleted')

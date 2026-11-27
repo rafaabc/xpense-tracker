@@ -106,6 +106,31 @@ export const subcategories = pgTable(
   ]
 );
 
+// People the user shares costs with; exactly one row per user is the user (US-16)
+export const people = pgTable(
+  "person",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    isSelf: boolean("is_self").notNull().default(false),
+    // Default split in basis points; the user's people always total 10000 (US-17)
+    defaultShareBps: integer("default_share_bps").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("person_lower_name_user_idx").on(
+      sql`lower(${t.name})`,
+      t.userId
+    ),
+    uniqueIndex("person_self_user_idx").on(t.userId).where(sql`${t.isSelf}`),
+  ]
+);
+
 export const expenses = pgTable("expense", {
   id: text("id")
     .primaryKey()
@@ -118,8 +143,37 @@ export const expenses = pgTable("expense", {
     .references(() => subcategories.id, { onDelete: "cascade" }),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   date: date("date", { mode: "string" }).notNull(),
+  // null only on rows created before US-18 or by recurrence; read as the user
+  // "no action" (not "restrict") so deleting a user can cascade through both tables
+  payerPersonId: text("payer_person_id").references(() => people.id, {
+    onDelete: "no action",
+  }),
+  splitMode: text("split_mode", { enum: ["personal", "split"] })
+    .notNull()
+    .default("personal"),
+  // Set on expenses generated from a template (US-21)
+  recurringTemplateId: text("recurring_template_id").references(
+    () => recurringTemplates.id,
+    { onDelete: "set null" }
+  ),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
+
+// Snapshot of how a split expense is divided (US-19)
+export const expenseShares = pgTable(
+  "expense_share",
+  {
+    expenseId: text("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    personId: text("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "no action" }),
+    shareBps: integer("share_bps").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.expenseId, t.personId] })]
+);
 
 export const recurringTemplates = pgTable("recurring_template", {
   id: text("id")
@@ -138,5 +192,26 @@ export const recurringTemplates = pgTable("recurring_template", {
   active: boolean("active").notNull().default(true),
   lastRenewedAt: date("last_renewed_at", { mode: "string" }),
   lastGeneratedDate: date("last_generated_date", { mode: "string" }),
+  // Copied to every generated expense; null is read as the user (US-21)
+  payerPersonId: text("payer_person_id").references(() => people.id, {
+    onDelete: "no action",
+  }),
+  splitMode: text("split_mode", { enum: ["personal", "split"] })
+    .notNull()
+    .default("personal"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
+
+export const recurringTemplateShares = pgTable(
+  "recurring_template_share",
+  {
+    templateId: text("template_id")
+      .notNull()
+      .references(() => recurringTemplates.id, { onDelete: "cascade" }),
+    personId: text("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "no action" }),
+    shareBps: integer("share_bps").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.templateId, t.personId] })]
+);

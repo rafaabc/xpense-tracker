@@ -11,6 +11,7 @@ const mockInsert = vi.fn()
 const mockUpdate = vi.fn()
 const mockDelete = vi.fn()
 const mockSelect = vi.fn()
+const mockBatch = vi.fn()
 
 vi.mock('@/lib/db', () => ({
   db: {
@@ -18,6 +19,7 @@ vi.mock('@/lib/db', () => ({
     insert: mockInsert,
     update: mockUpdate,
     delete: mockDelete,
+    batch: mockBatch,
   },
 }))
 
@@ -43,13 +45,18 @@ vi.mock('@/lib/schema', () => ({
   subcategories: { id: 'id', groupId: 'group_id' },
   groups: { id: 'id', userId: 'user_id' },
   expenses: {},
+  recurringTemplateShares: { templateId: 'template_id' },
+  expenseShares: {},
+  people: { id: 'id', userId: 'user_id', createdAt: 'created_at' },
 }))
 
 function makeChain(resolved: unknown) {
   return {
     from: vi.fn().mockReturnThis(),
     innerJoin: vi.fn().mockReturnThis(),
-    where: vi.fn().mockResolvedValue(resolved),
+    where: vi.fn().mockImplementation(() =>
+      Object.assign(Promise.resolve(resolved), { orderBy: () => Promise.resolve([{ id: 'p-self' }]) }),
+    ),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn().mockResolvedValue(resolved),
     set: vi.fn().mockReturnThis(),
@@ -85,7 +92,7 @@ describe('deleteRecurringTemplate', () => {
     mockSelect.mockReturnValue(ownershipChain)
 
     const { deleteRecurringTemplate } = await import('@/app/actions/recurring')
-    await expect(deleteRecurringTemplate('tmpl-other')).rejects.toThrow()
+    await expect(deleteRecurringTemplate('tmpl-other')).resolves.toHaveProperty('error')
   })
 })
 
@@ -106,6 +113,8 @@ describe('updateRecurringTemplate', () => {
       startDate: '2024-01-15',
       interval: 'monthly',
       dayOfMonth: '15',
+      payerPersonId: 'p-self',
+      splitMode: 'personal',
     })
 
     expect(mockUpdate).toHaveBeenCalledOnce()

@@ -4,6 +4,7 @@ import { groups, subcategories, users } from '@/lib/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import { listRecurringTemplates } from '@/app/actions/recurring'
+import { ensureSelfPerson, listPeople } from '@/lib/people'
 import RecurringManager from '@/components/recurring/RecurringManager'
 import { DEFAULT_CURRENCY, type Currency } from '@/lib/validations/currency'
 
@@ -13,7 +14,10 @@ export default async function RecurringPage() {
 
   const userId = session.user.id
 
-  const [templates, userGroups, [userRecord]] = await Promise.all([
+  // The template form needs a payer, so the user's own person must exist
+  await ensureSelfPerson(userId)
+
+  const [templates, userGroups, [userRecord], userPeople] = await Promise.all([
     listRecurringTemplates(),
     db
       .select({ id: groups.id, name: groups.name })
@@ -24,6 +28,7 @@ export default async function RecurringPage() {
       .select({ currency: users.currency })
       .from(users)
       .where(eq(users.id, userId)),
+    listPeople(userId),
   ])
 
   const groupIds = userGroups.map((g) => g.id)
@@ -81,6 +86,7 @@ export default async function RecurringPage() {
         templates={templates}
         groups={groupsWithSubs}
         currency={currency}
+        people={userPeople}
       />
     </div>
   )

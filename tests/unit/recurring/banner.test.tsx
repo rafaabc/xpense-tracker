@@ -30,6 +30,9 @@ const template = {
   lastRenewedAt: null,
   lastGeneratedDate: null,
   nextExecutionDate: '2025-01-15',
+  payerPersonId: null,
+  splitMode: 'personal' as const,
+  shares: [],
 }
 
 describe('RenewalBanner', () => {

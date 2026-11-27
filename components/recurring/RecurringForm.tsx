@@ -5,11 +5,13 @@ import { validateAmount } from '@/lib/validations/expenses'
 import { validateDayOfMonth, validateInterval, validateStartDate } from '@/lib/validations/recurring'
 import { INTERVALS } from '@/lib/recurrence'
 import type { Interval } from '@/lib/recurrence'
+import SplitFields, { useSplitFields, type SplitValues, type StoredSplit } from '@/components/shared/SplitFields'
+import type { PersonRow } from '@/lib/types'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }
 
-export interface RecurringFormValues {
+export interface RecurringFormValues extends SplitValues {
   amount: string
   subcategoryId: string
   startDate: string
@@ -17,20 +19,20 @@ export interface RecurringFormValues {
   dayOfMonth: string
 }
 
-interface InitialValues extends RecurringFormValues {
-  id: string
-}
+type InitialValues = Omit<RecurringFormValues, keyof SplitValues> & StoredSplit & { id: string }
 
 interface Props {
   groups: GroupOption[]
+  /** The user's people; payer and split controls appear once there are two */
+  people: PersonRow[]
   initial?: InitialValues
-  onSubmit: (payload: RecurringFormValues) => Promise<void>
+  onSubmit: (payload: RecurringFormValues, options: { applyToCurrentMonth: boolean }) => Promise<void>
   onCancel: () => void
 }
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
-export default function RecurringForm({ groups, initial, onSubmit, onCancel }: Props) {
+export default function RecurringForm({ groups, people, initial, onSubmit, onCancel }: Props) {
   const [amount, setAmount] = useState(initial?.amount ?? '')
   const [subcategoryId, setSubcategoryId] = useState(initial?.subcategoryId ?? '')
   const [startDate, setStartDate] = useState(initial?.startDate ?? TODAY)
@@ -38,6 +40,10 @@ export default function RecurringForm({ groups, initial, onSubmit, onCancel }: P
   const [dayOfMonth, setDayOfMonth] = useState(initial?.dayOfMonth ?? '1')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const split = useSplitFields(people, initial)
+  const [applyNow, setApplyNow] = useState(false)
+  // Only an edit of payer or split can affect expenses that already exist
+  const offerApply = Boolean(initial) && split.changed
 
   async function handleSubmit() {
     setError(null)
@@ -56,9 +62,15 @@ export default function RecurringForm({ groups, initial, onSubmit, onCancel }: P
 
     if (!subcategoryId) { setError('Subcategory is required'); return }
 
+    const splitValues = split.read()
+    if (!splitValues.ok) { setError(splitValues.error); return }
+
     setSubmitting(true)
     try {
-      await onSubmit({ amount: amount.trim(), subcategoryId, startDate, interval, dayOfMonth })
+      await onSubmit(
+        { amount: amount.trim(), subcategoryId, startDate, interval, dayOfMonth, ...splitValues.value },
+        { applyToCurrentMonth: offerApply && applyNow },
+      )
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -116,6 +128,8 @@ export default function RecurringForm({ groups, initial, onSubmit, onCancel }: P
           width: '100%',
           maxWidth: 480,
           padding: '28px 24px 24px',
+          maxHeight: 'calc(100dvh - 32px)',
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: 20,
@@ -133,22 +147,6 @@ export default function RecurringForm({ groups, initial, onSubmit, onCancel }: P
         >
           {initial ? 'Edit recurring expense' : 'Add recurring expense'}
         </h2>
-
-        {error && (
-          <div
-            role="alert"
-            style={{
-              background: 'var(--negative-50)',
-              borderRadius: 'var(--radius-md)',
-              padding: '10px 14px',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 'var(--text-sm)',
-              color: 'var(--negative-700)',
-            }}
-          >
-            {error}
-          </div>
-        )}
 
         {/* Amount */}
         <div>
@@ -250,6 +248,37 @@ export default function RecurringForm({ groups, initial, onSubmit, onCancel }: P
             If the day doesn&apos;t exist in a month, the last day of that month is used.
           </p>
         </div>
+
+        <SplitFields split={split} idPrefix="rec" labelStyle={labelStyle} inputStyle={inputStyle} />
+
+        {offerApply && (
+          <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400, marginBottom: 0 }}>
+            <input
+              type="checkbox"
+              checked={applyNow}
+              onChange={(e) => setApplyNow(e.target.checked)}
+              style={{ accentColor: 'var(--brand, #128A5E)' }}
+            />
+            Also apply to expenses already generated this month
+          </label>
+        )}
+
+        {/* Error sits next to Save so it is visible when the dialog is scrolled */}
+        {error && (
+          <div
+            role="alert"
+            style={{
+              background: 'var(--negative-50)',
+              borderRadius: 'var(--radius-md)',
+              padding: '10px 14px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--negative-700)',
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>

@@ -7,13 +7,14 @@ import {
   updateRecurringTemplate,
   deleteRecurringTemplate,
 } from '@/app/actions/recurring'
-import type { RecurringTemplateRow } from '@/lib/types'
+import type { PersonRow, RecurringTemplateRow } from '@/lib/types'
 import { formatAmount } from '@/lib/format'
 import { INTERVALS } from '@/lib/recurrence'
 import type { Currency } from '@/lib/validations/currency'
-import RecurringForm from '@/components/recurring/RecurringForm'
+import RecurringForm, { type RecurringFormValues } from '@/components/recurring/RecurringForm'
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal'
 import { useToast } from '@/components/shared/Toast'
+import { unwrap } from '@/lib/action-result'
 
 interface SubcategoryOption { id: string; name: string }
 interface GroupOption { id: string; name: string; subcategories: SubcategoryOption[] }
@@ -22,6 +23,7 @@ interface Props {
   templates: RecurringTemplateRow[]
   groups: GroupOption[]
   currency: Currency
+  people: PersonRow[]
 }
 
 type EditState =
@@ -31,7 +33,7 @@ type EditState =
 
 type DeleteState = { id: string; label: string } | null
 
-export default function RecurringManager({ templates, groups, currency }: Props) {
+export default function RecurringManager({ templates, groups, currency, people }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const toast = useToast()
@@ -40,11 +42,15 @@ export default function RecurringManager({ templates, groups, currency }: Props)
 
   function refresh() { router.refresh() }
 
-  async function handleCreate(payload: {
-    amount: string; subcategoryId: string; startDate: string; interval: string; dayOfMonth: string
-  }) {
+  // A missing payer (legacy template) means the user pays
+  function payerName(template: RecurringTemplateRow) {
+    const payer = people.find((p) => (template.payerPersonId ? p.id === template.payerPersonId : p.isSelf))
+    return payer?.name
+  }
+
+  async function handleCreate(payload: RecurringFormValues) {
     try {
-      await createRecurringTemplate(payload)
+      unwrap(await createRecurringTemplate(payload))
       setEditState(null)
       refresh()
       toast.success('Recurring expense added')
@@ -53,12 +59,10 @@ export default function RecurringManager({ templates, groups, currency }: Props)
     }
   }
 
-  async function handleUpdate(payload: {
-    amount: string; subcategoryId: string; startDate: string; interval: string; dayOfMonth: string
-  }) {
+  async function handleUpdate(payload: RecurringFormValues, options: { applyToCurrentMonth: boolean }) {
     if (editState?.kind !== 'edit') return
     try {
-      await updateRecurringTemplate(editState.template.id, payload)
+      unwrap(await updateRecurringTemplate(editState.template.id, payload, options))
       setEditState(null)
       refresh()
       toast.success('Recurring expense updated')
@@ -71,7 +75,7 @@ export default function RecurringManager({ templates, groups, currency }: Props)
     if (!deleteState) return
     startTransition(async () => {
       try {
-        await deleteRecurringTemplate(deleteState.id)
+        unwrap(await deleteRecurringTemplate(deleteState.id))
         setDeleteState(null)
         refresh()
         toast.success('Recurring expense deleted')
@@ -208,6 +212,32 @@ export default function RecurringManager({ templates, groups, currency }: Props)
                 >
                   {tmpl.subcategoryName}
                 </span>
+                {people.length > 1 && (
+                  <span
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 6,
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--ink-500)',
+                    }}
+                  >
+                    <span>{`Paid by ${payerName(tmpl)}`}</span>
+                    {tmpl.splitMode === 'split' && (
+                      <span
+                        style={{
+                          padding: '0 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--line)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Split
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
 
               {/* Interval */}
@@ -283,6 +313,7 @@ export default function RecurringManager({ templates, groups, currency }: Props)
       {editState?.kind === 'create' && (
         <RecurringForm
           groups={groups}
+          people={people}
           onSubmit={handleCreate}
           onCancel={() => setEditState(null)}
         />
@@ -292,6 +323,7 @@ export default function RecurringManager({ templates, groups, currency }: Props)
       {editState?.kind === 'edit' && (
         <RecurringForm
           groups={groups}
+          people={people}
           initial={{
             id: editState.template.id,
             amount: editState.template.amount,
@@ -299,6 +331,9 @@ export default function RecurringManager({ templates, groups, currency }: Props)
             startDate: editState.template.startDate,
             interval: editState.template.interval,
             dayOfMonth: String(editState.template.dayOfMonth),
+            payerPersonId: editState.template.payerPersonId,
+            splitMode: editState.template.splitMode,
+            shares: editState.template.shares,
           }}
           onSubmit={handleUpdate}
           onCancel={() => setEditState(null)}

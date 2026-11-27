@@ -6,6 +6,7 @@ import {
   Receipt,
   Tags,
   Repeat,
+  Scale,
   BarChart3,
   Settings,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/categories', label: 'Categories', icon: Tags },
   { href: '/recurring', label: 'Recurring', icon: Repeat },
+  { href: '/balance', label: 'Balance', icon: Scale },
   { href: '/summary', label: 'Summary', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
