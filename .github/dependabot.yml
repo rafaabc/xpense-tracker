@@ -70,6 +70,7 @@ updates:
           - '@vitest/coverage-v8'
           - '@playwright/test'
           - 'jsdom'
+          - '@testing-library/*'
           # vitest 5 peer-requires @types/node ^22 || >=24; grouped here so
           # the two always bump together instead of splitting into an
           # unmergeable PR (see #29/#33).
